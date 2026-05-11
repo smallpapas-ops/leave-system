@@ -14,6 +14,9 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <title>智慧特休預約系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
@@ -606,7 +609,10 @@ body::after { content: ''; display: block; height: 16px; }
     <div class="app-header h1" style="font-size:17px;font-weight:700;letter-spacing:.5px">🌿 智慧特休預約系統</div>
     <div class="header-sub" id="todayLabel"></div>
   </div>
-  <button class="admin-btn" onclick="openAdmin()">🔐 主管</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="syncStatus" style="font-size:11px;opacity:0.85;white-space:nowrap">⏳ 連線中...</span>
+    <button class="admin-btn" onclick="openAdmin()">🔐 主管</button>
+  </div>
 </div>
 
 <div class="tabs" id="mainTabs">
@@ -982,13 +988,78 @@ let state = {
   theme: {accent:'#2d6a4f',accent2:'#40916c',accentLight:'#d8f3dc'}
 };
 
-// ==================== STORAGE ====================
-function save() {
+// ==================== FIREBASE STORAGE ====================
+const firebaseConfig = {
+  databaseURL: "https://leave-system-3b851-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+
+let db = null;
+let firebaseReady = false;
+
+function initFirebase() {
   try {
-    localStorage.setItem('leaveSystem_v2', JSON.stringify({members:state.members,records:state.records,theme:state.theme}));
-  } catch(e) {}
+    if (typeof firebase === 'undefined') {
+      console.warn('Firebase SDK 未載入，使用 localStorage 備援');
+      loadFromLocal();
+      return;
+    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    firebaseReady = true;
+    console.log('Firebase 連線成功');
+    // 即時監聽資料變更（多人同步）
+    db.ref('leaveSystem').on('value', snapshot => {
+      const data = snapshot.val();
+      if (data) {
+        state.members = data.members || DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
+        state.records = data.records || [];
+        state.theme = data.theme || state.theme;
+        applyTheme();
+        renderGroupList();
+        renderCalendar();
+        renderRecords();
+        if (state.adminLoggedIn && state.currentAdminTab === 0) {
+          renderAdminReview(document.getElementById('adminTabContent'));
+        }
+      } else {
+        // 首次使用，寫入預設組員資料
+        state.members = DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
+        state.records = [];
+        save();
+      }
+      document.getElementById('syncStatus').textContent = '☁️ 已同步';
+    }, err => {
+      console.error('Firebase 讀取失敗:', err);
+      document.getElementById('syncStatus').textContent = '⚠️ 離線模式';
+      loadFromLocal();
+    });
+  } catch(e) {
+    console.error('Firebase 初始化失敗:', e);
+    loadFromLocal();
+  }
 }
-function load() {
+
+function save() {
+  // 同時存 localStorage 作為離線備援
+  try { localStorage.setItem('leaveSystem_v2', JSON.stringify({members:state.members,records:state.records,theme:state.theme})); } catch(e) {}
+  // 寫入 Firebase
+  if (firebaseReady && db) {
+    document.getElementById('syncStatus').textContent = '⏳ 同步中...';
+    db.ref('leaveSystem').set({
+      members: state.members,
+      records: state.records,
+      theme: state.theme,
+      updatedAt: new Date().toISOString()
+    }).then(() => {
+      document.getElementById('syncStatus').textContent = '☁️ 已同步';
+    }).catch(e => {
+      console.error('Firebase 寫入失敗:', e);
+      document.getElementById('syncStatus').textContent = '⚠️ 同步失敗';
+    });
+  }
+}
+
+function loadFromLocal() {
   try {
     const d = localStorage.getItem('leaveSystem_v2');
     if (d) {
@@ -999,6 +1070,11 @@ function load() {
     }
   } catch(e) {}
   if (!state.members.length) state.members = DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
+}
+
+function load() {
+  loadFromLocal(); // 先載入 localStorage 讓畫面快速顯示
+  initFirebase();  // 然後連 Firebase 取最新資料
 }
 
 // ==================== LEAVE CALCULATION ====================
