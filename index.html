@@ -1503,22 +1503,11 @@ function renderRecord(r, isAdmin) {
   }
 
   let actions = '';
-  const now = new Date();
-  const canEdit = (r.status === 'approved' || r.status === 'modified') && new Date(r.endDate) <= addMonths(now, 8) && new Date(r.endDate) > now;
 
   if (!isAdmin) {
+    // 一般同仁僅能確認對調，無修改/取消功能
     if (r.type === 'swap' && r.status === 'swap_pending') {
-      // Show confirm button for partner
       actions += `<button class="btn btn-sm btn-outline" onclick="confirmSwap('${r.id}')">確認對調</button>`;
-    }
-    if (canEdit) {
-      actions += `<button class="btn btn-sm btn-secondary" onclick="editRecord('${r.id}')">修改日期</button>`;
-    }
-    if (r.status !== 'cancelled' && r.status !== 'rejected') {
-      actions += `<button class="btn btn-sm btn-danger" onclick="cancelRecord('${r.id}')">取消</button>`;
-    }
-    if (r.type === 'swap' && r.status === 'approved_swap') {
-      actions += `<button class="btn btn-sm btn-outline" onclick="markSwapDone('${r.id}')">標記對調完成</button>`;
     }
   } else {
     if (r.status === 'pending' || r.status === 'swap_pending') {
