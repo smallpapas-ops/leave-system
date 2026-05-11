@@ -683,21 +683,7 @@ body::after { content: ''; display: block; height: 16px; }
       <div id="swapPartnerInfo"></div>
     </div>
     <div class="card">
-      <div class="card-title"><div class="icon">📅</div>申請假期（未來8個月）</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">開始日</label>
-          <input type="date" class="form-control" id="swapMyStart" onchange="calcSwapLimits()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">結束日</label>
-          <input type="date" class="form-control" id="swapMyEnd" onchange="calcSwapLimits()">
-        </div>
-      </div>
-      <div id="swapMyDayInfo" class="hint"></div>
-    </div>
-    <div class="card">
-      <div class="card-title"><div class="icon">📅</div>對調假期（必須在申請月前4個月內）</div>
+      <div class="card-title"><div class="icon">📅</div>對調假期日期</div>
       <div id="swapDateHint" class="hint" style="margin-bottom:8px"></div>
       <div class="form-row">
         <div class="form-group">
@@ -1341,25 +1327,7 @@ function submitGeneral() {
 
 // ==================== SWAP APPLY ====================
 function calcSwapLimits() {
-  const s = document.getElementById('swapMyStart').value;
-  const e = document.getElementById('swapMyEnd').value;
-  const hint = document.getElementById('swapDateHint');
-  const info = document.getElementById('swapMyDayInfo');
-  if (!s) { hint.textContent = ''; info.textContent = ''; return; }
-
-  const startMonth = new Date(s);
-  const earliest = new Date(startMonth);
-  earliest.setMonth(earliest.getMonth() - 4);
-  earliest.setDate(1);
-
-  hint.textContent = `對調假期最早可從 ${earliest.getFullYear()}/${earliest.getMonth()+1}/1 開始`;
-  document.getElementById('swapTheirStart').min = toISO(earliest);
-  document.getElementById('swapTheirEnd').min = toISO(earliest);
-
-  if (e && s) {
-    const days = countWorkdays(s, e);
-    info.textContent = `工作天數：${days} 天`;
-  }
+  // 申請假期欄位已移除，此函式保留供相容性
 }
 
 function calcSwapDays() {
@@ -1376,45 +1344,26 @@ function submitSwap() {
   if (!userId) { showToast('請填寫申請人'); return; }
   if (!partnerId) { showToast('請選擇對調人員'); return; }
 
-  const myS = document.getElementById('swapMyStart').value;
-  const myE = document.getElementById('swapMyEnd').value;
   const theirS = document.getElementById('swapTheirStart').value;
   const theirE = document.getElementById('swapTheirEnd').value;
 
-  if (!myS || !myE || !theirS || !theirE) { showToast('請填寫所有日期'); return; }
+  if (!theirS || !theirE) { showToast('請填寫對調假期日期'); return; }
+  if (theirE < theirS) { showToast('結束日不可早於開始日'); return; }
 
-  // Validate 4-month rule
-  const applyStart = new Date(myS);
-  const earliest = new Date(applyStart);
-  earliest.setMonth(earliest.getMonth() - 4);
-  earliest.setDate(1);
-
-  if (new Date(theirS) < earliest) {
-    showToast(`對調假期不符合規定（最早 ${formatISO(toISO(earliest))}）`);
-    return;
-  }
-
-  const myDays = countWorkdays(myS, myE);
   const theirDays = countWorkdays(theirS, theirE);
-
-  if (myDays < 5 || myDays > 15) { showToast('對調申請假期須為 5–15 天'); return; }
-
-  // Today check: within 8 months
-  const today = new Date();
-  const maxDate = addMonths(today, 8);
-  if (new Date(myS) > maxDate) { showToast('申請假期超過 8 個月'); return; }
+  if (theirDays < 5 || theirDays > 15) { showToast('對調假期須為 5–15 個工作天'); return; }
 
   const blk = document.getElementById('swapBlockInfo');
-  if (!checkLongLeaveBlock(myS, myE, userId, null, blk)) return;
+  if (!checkLongLeaveBlock(theirS, theirE, userId, null, blk)) return;
 
   const rec = {
     id: 'S' + Date.now(),
     userId,
     partnerId,
     type: 'swap',
-    startDate: myS,
-    endDate: myE,
-    days: myDays,
+    startDate: theirS,
+    endDate: theirE,
+    days: theirDays,
     isLong: true,
     swapStart: theirS,
     swapEnd: theirE,
@@ -1422,7 +1371,6 @@ function submitSwap() {
     status: 'swap_pending',
     history: [{time: new Date().toISOString(), action: '提交對調申請，待對調人確認'}],
     createdAt: new Date().toISOString(),
-    swapExpiry: addMonths(new Date(myS), -4).toISOString(),
     adminMaxOverlap: 1
   };
 
@@ -1430,10 +1378,10 @@ function submitSwap() {
   save();
   showToast('對調申請已送出，等待對調人員確認');
   // Reset
-  ['swapMyStart','swapMyEnd','swapTheirStart','swapTheirEnd'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('swapMyDayInfo').textContent = '';
+  ['swapTheirStart','swapTheirEnd'].forEach(id => document.getElementById(id).value='');
   document.getElementById('swapTheirDayInfo').textContent = '';
   document.getElementById('swapDateHint').textContent = '';
+  document.getElementById('swapBlockInfo').innerHTML = '';
 }
 
 // ==================== RECORDS ====================
@@ -2172,10 +2120,7 @@ function init() {
     const el = document.getElementById(id);
     if (el) { el.min = todayStr; el.max = maxDate; }
   });
-  ['swapMyStart','swapMyEnd'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.min = todayStr; el.max = maxDate; }
-  });
+  // swapMyStart/swapMyEnd removed
 
   renderGroupList();
   renderCalendar();
