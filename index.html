@@ -1143,6 +1143,14 @@ function formatISO(str) {
   return str ? str.replace(/-/g, '/') : '';
 }
 
+function formatDateTime(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  const pad = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate())
+    + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
 // ==================== LOOKUP ====================
 function lookupUser(inputId, infoId) {
   const q = document.getElementById(inputId).value.trim();
@@ -1234,39 +1242,82 @@ function calcGenDays() {
   }
 }
 
-function checkLongLeaveBlock(startStr, endStr, userId, excludeId, blk) {
+function checkLongLeaveBlock(startStr, endStr, userId, excludeId, blk, isSwap) {
   const member = state.members.find(m => m.id === userId);
-  if (!member) return;
+  if (!member) return false;
   const totalLeave = getMemberLeave(member);
   const used = usedLeave(userId, excludeId);
   const remain = totalLeave - used;
   const days = countWorkdays(startStr, endStr);
 
   if (days > remain) {
-    if (blk) blk.innerHTML = `<div class="alert alert-danger">超過剩餘特休天數（剩 ${remain} 天）</div>`;
+    if (blk) blk.innerHTML = '<div class="alert alert-danger">超過剩餘特休天數（剩 ' + remain + ' 天）</div>';
     return false;
   }
   if (days > Math.floor(totalLeave / 2)) {
-    if (blk) blk.innerHTML = `<div class="alert alert-danger">你已超過個人特休天數 1/2（上限 ${Math.floor(totalLeave/2)} 天）</div>`;
+    if (blk) blk.innerHTML = '<div class="alert alert-danger">你已超過個人特休天數 1/2（上限 ' + Math.floor(totalLeave/2) + ' 天）</div>';
     return false;
   }
 
-  // Same group long leave conflict
-  const conflict = state.records.filter(r => {
-    if (r.id === excludeId) return false;
-    if (r.status !== 'approved' && r.status !== 'pending') return false;
+  // 同組已完成（approved）長假
+  const sameGroupApproved = state.records.filter(r => {
+    if (r.id === excludeId || r.userId === userId) return false;
+    if (r.status !== 'approved') return false;
     const rm = state.members.find(m => m.id === r.userId);
-    if (!rm || rm.group !== member.group || r.userId === userId) return false;
-    const rDays = countWorkdays(r.startDate, r.endDate);
-    if (rDays < 5) return false;
-    // overlap check (excluding weekends and holidays)
+    if (!rm || rm.group !== member.group) return false;
+    if (countWorkdays(r.startDate, r.endDate) < 5) return false;
     return datesOverlap(startStr, endStr, r.startDate, r.endDate);
   });
 
-  if (conflict.length > 0) {
-    const names = conflict.map(r => state.members.find(m=>m.id===r.userId)?.name || '').join('、');
-    if (blk) blk.innerHTML = `<div class="alert alert-danger">該假期 ${member.group} 組已有長假預約名額（${names}）</div>`;
-    return false;
+  // 同組待審核（pending）長假
+  const sameGroupPending = state.records.filter(r => {
+    if (r.id === excludeId || r.userId === userId) return false;
+    if (r.status !== 'pending') return false;
+    const rm = state.members.find(m => m.id === r.userId);
+    if (!rm || rm.group !== member.group) return false;
+    if (countWorkdays(r.startDate, r.endDate) < 5) return false;
+    return datesOverlap(startStr, endStr, r.startDate, r.endDate);
+  });
+
+  if (isSwap) {
+    // 對調特例：同組已有 approved → 允許1個對調名額
+    if (sameGroupApproved.length > 0) {
+      const names = sameGroupApproved.map(r => state.members.find(m=>m.id===r.userId)?.name || '').join('、');
+      // 檢查對調名額是否已被佔用
+      const swapConflict = state.records.filter(r => {
+        if (r.id === excludeId || r.userId === userId) return false;
+        if (r.type !== 'swap') return false;
+        if (r.status === 'cancelled' || r.status === 'rejected') return false;
+        const rm = state.members.find(m => m.id === r.userId);
+        if (!rm || rm.group !== member.group) return false;
+        if (countWorkdays(r.startDate, r.endDate) < 5) return false;
+        return datesOverlap(startStr, endStr, r.startDate, r.endDate);
+      });
+      if (swapConflict.length > 0) {
+        const snames = swapConflict.map(r => state.members.find(m=>m.id===r.userId)?.name || '').join('、');
+        if (blk) blk.innerHTML = '<div class="alert alert-danger">該假期 ' + member.group + ' 組對調名額已被 ' + snames + ' 申請中</div>';
+        return false;
+      }
+      if (blk) blk.innerHTML = '<div class="alert alert-info">💡 ' + member.group + '組 ' + names + ' 已完成預約同段假期，允許你透過對調申請加入。</div>';
+      return true;
+    }
+    // 同組有 pending 時不允許對調（避免雙重佔位）
+    if (sameGroupPending.length > 0) {
+      const names = sameGroupPending.map(r => state.members.find(m=>m.id===r.userId)?.name || '').join('、');
+      if (blk) blk.innerHTML = '<div class="alert alert-warning">該假期 ' + member.group + ' 組有待審核長假（' + names + '），請等確認核准後再申請對調</div>';
+      return false;
+    }
+    // 同組無任何長假，對調也照一般規則
+    if (blk) blk.innerHTML = '';
+    return true;
+  } else {
+    // 一般申請：有任何衝突就擋
+    const conflict = [...sameGroupApproved, ...sameGroupPending];
+    if (conflict.length > 0) {
+      const names = conflict.map(r => state.members.find(m=>m.id===r.userId)?.name || '').join('、');
+      if (blk) blk.innerHTML = '<div class="alert alert-danger">該假期 ' + member.group + ' 組已有長假預約名額（' + names + '）</div>';
+      return false;
+    }
   }
   return true;
 }
@@ -1354,7 +1405,7 @@ function submitSwap() {
   if (theirDays < 5 || theirDays > 15) { showToast('對調假期須為 5–15 個工作天'); return; }
 
   const blk = document.getElementById('swapBlockInfo');
-  if (!checkLongLeaveBlock(theirS, theirE, userId, null, blk)) return;
+  if (!checkLongLeaveBlock(theirS, theirE, userId, null, blk, true)) return;
 
   const rec = {
     id: 'S' + Date.now(),
@@ -1469,13 +1520,17 @@ function renderRecord(r, isAdmin) {
     if (r.status !== 'cancelled') actions += `<button class="btn btn-sm btn-danger" onclick="cancelRecord('${r.id}')">取消</button>`;
   }
 
-  const history = r.history ? r.history.slice(-2).map(h => `<div class="timeline-item">${h.time.substring(0,10)} ${h.action}</div>`).join('') : '';
+  const history = r.history ? r.history.slice(-3).map(h => {
+    const dt = formatDateTime(h.time);
+    return `<div class="timeline-item">${dt} ${h.action}</div>`;
+  }).join('') : '';
 
   return `<div class="record-card">
     <div class="record-header">
       <div>
         <div class="record-name">${name} <span style="font-size:11px;color:var(--text3);font-weight:400">${group}</span></div>
         <div class="record-meta">${r.type === 'swap' ? '🔄 對調' : '📅 一般'} ・ ${r.isLong ? '長假' : '短假'} ・ ${r.days} 工作天</div>
+        <div class="record-meta" style="margin-top:2px">🕐 申請時間：${formatDateTime(r.createdAt)}</div>
       </div>
       ${statusBadge(r.status)}
     </div>
