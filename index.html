@@ -2027,7 +2027,10 @@ function renderAdminMembers(container) {
             </div>
             <div class="record-meta">到職 ${formatISO(m.join)} ・ 特休 ${leave} 天・已用 ${used} 天</div>
           </div>
-          <div style="display:flex;gap:6px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+            <button class="btn btn-sm" style="background:${m.group==='A'?'var(--accent-light)':'var(--blue-light)'};color:${m.group==='A'?'var(--accent)':'var(--blue)'};border:1px solid ${m.group==='A'?'var(--accent)':'var(--blue)'}" onclick="quickSwitchGroup('${m.id}')" title="點擊切換組別">
+              ${m.group}組 ⇄
+            </button>
             <button class="btn btn-sm btn-outline" onclick="openEditMember('${m.id}')">✏️ 修改</button>
             <button class="btn btn-sm btn-danger" onclick="removeMember('${m.id}')">移除</button>
           </div>
@@ -2101,6 +2104,17 @@ function saveEditMember(oldId) {
   save();
   closeModal();
   showToast(`✅ ${newName} 資料已更新`);
+  renderGroupList();
+  renderAdminMembers(document.getElementById('adminTabContent'));
+}
+
+function quickSwitchGroup(id) {
+  const m = state.members.find(x => x.id === id);
+  if (!m) return;
+  const oldGroup = m.group;
+  m.group = m.group === 'A' ? 'B' : 'A';
+  save();
+  showToast(`✅ ${m.name} 已從 ${oldGroup}組 切換至 ${m.group}組`);
   renderGroupList();
   renderAdminMembers(document.getElementById('adminTabContent'));
 }
