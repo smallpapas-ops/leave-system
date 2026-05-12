@@ -1641,19 +1641,57 @@ function markSwapDone(id) {
 function editRecord(id) {
   const r = state.records.find(x => x.id === id);
   if (!r) return;
+  const m = state.members.find(x => x.id === r.userId);
   const modal = document.getElementById('modalContent');
-  modal.innerHTML = `
-    <div class="modal-title">修改申請 <button class="modal-close" onclick="closeModal()">✕</button></div>
-    <div class="form-group">
-      <label class="form-label">開始日期</label>
-      <input type="date" class="form-control" id="editStart" value="${r.startDate}">
-    </div>
-    <div class="form-group">
-      <label class="form-label">結束日期</label>
-      <input type="date" class="form-control" id="editEnd" value="${r.endDate}">
-    </div>
-    <button class="btn btn-primary" onclick="saveEdit('${id}')">儲存修改</button>
-  `;
+
+  if (state.adminLoggedIn) {
+    const statusOptions = [
+      {v:'pending',l:'待審核'},{v:'approved',l:'已完成'},
+      {v:'swap_pending',l:'對調待確認'},{v:'rejected',l:'已退件'},
+      {v:'cancelled',l:'已取消'},{v:'modified',l:'已修改'}
+    ].map(o => '<option value="' + o.v + '"' + (r.status===o.v?' selected':'') + '>' + o.l + '</option>').join('');
+
+    const userOpts = state.members.map(x =>
+      '<option value="' + x.id + '"' + (r.userId===x.id?' selected':'') + '>' + x.name + '（' + x.group + '組）</option>'
+    ).join('');
+    const partnerOpts = '<option value="">（無）</option>' + state.members
+      .filter(x => x.id !== r.userId)
+      .map(x => '<option value="' + x.id + '"' + (r.partnerId===x.id?' selected':'') + '>' + x.name + '（' + x.group + '組）</option>')
+      .join('');
+
+    modal.innerHTML =
+      '<div class="modal-title">✏️ 主管修改申請 <button class="modal-close" onclick="closeModal()">✕</button></div>' +
+      '<div class="alert alert-info" style="margin-bottom:12px">申請人：' + (m?.name||r.userId) + '・' + (m?.group||'') + '組</div>' +
+      '<div class="form-group"><label class="form-label">申請人（可更換）</label>' +
+      '<select class="form-control" id="editUserId">' + userOpts + '</select></div>' +
+      '<div class="form-row">' +
+        '<div class="form-group"><label class="form-label">開始日期</label>' +
+        '<input type="date" class="form-control" id="editStart" value="' + r.startDate + '"></div>' +
+        '<div class="form-group"><label class="form-label">結束日期</label>' +
+        '<input type="date" class="form-control" id="editEnd" value="' + r.endDate + '"></div>' +
+      '</div>' +
+      '<div class="form-group"><label class="form-label">假期類型</label>' +
+      '<select class="form-control" id="editType" onchange="document.getElementById('editPartnerWrap').style.display=this.value==='swap'?'':'none'">' +
+        '<option value="general"' + (r.type==='general'?' selected':'') + '>一般申請</option>' +
+        '<option value="swap"' + (r.type==='swap'?' selected':'') + '>對調申請</option>' +
+      '</select></div>' +
+      '<div class="form-group" id="editPartnerWrap" style="' + (r.type==='swap'?'':'display:none') + '">' +
+        '<label class="form-label">對調人員</label>' +
+        '<select class="form-control" id="editPartnerId">' + partnerOpts + '</select></div>' +
+      '<div class="form-group"><label class="form-label">狀態</label>' +
+        '<select class="form-control" id="editStatus">' + statusOptions + '</select></div>' +
+      '<div class="form-group"><label class="form-label">備註／修改原因</label>' +
+        '<input class="form-control" id="editNote" placeholder="說明修改原因（將記入異動歷程）"></div>' +
+      '<button class="btn btn-primary" style="margin-top:4px" onclick="adminSaveEdit('' + id + '')">✅ 儲存（主管權限，立即生效）</button>';
+  } else {
+    modal.innerHTML =
+      '<div class="modal-title">修改申請 <button class="modal-close" onclick="closeModal()">✕</button></div>' +
+      '<div class="form-group"><label class="form-label">開始日期</label>' +
+        '<input type="date" class="form-control" id="editStart" value="' + r.startDate + '"></div>' +
+      '<div class="form-group"><label class="form-label">結束日期</label>' +
+        '<input type="date" class="form-control" id="editEnd" value="' + r.endDate + '"></div>' +
+      '<button class="btn btn-primary" onclick="saveEdit('' + id + '')">儲存修改</button>';
+  }
   document.getElementById('modalOverlay').classList.add('open');
 }
 
@@ -1663,18 +1701,52 @@ function saveEdit(id) {
   const s = document.getElementById('editStart').value;
   const e = document.getElementById('editEnd').value;
   if (!s || !e || e < s) { showToast('日期有誤'); return; }
-  r.startDate = s;
-  r.endDate = e;
-  r.days = countWorkdays(s, e);
-  r.isLong = r.days >= 5;
+  r.startDate = s; r.endDate = e;
+  r.days = countWorkdays(s, e); r.isLong = r.days >= 5;
   r.status = r.type === 'swap' ? 'swap_modify_pending' : 'modified';
-  r.history.push({time: new Date().toISOString(), action: `修改日期為 ${formatISO(s)} – ${formatISO(e)}`});
-  save();
-  closeModal();
-  renderRecords();
-  renderCalendar();
+  r.history.push({time: new Date().toISOString(), action: '修改日期為 ' + formatISO(s) + ' – ' + formatISO(e)});
+  save(); closeModal(); renderRecords(); renderCalendar();
   showToast('已修改，請等待重新審核');
 }
+
+function adminSaveEdit(id) {
+  const r = state.records.find(x => x.id === id);
+  if (!r) return;
+  const s = document.getElementById('editStart').value;
+  const e = document.getElementById('editEnd').value;
+  if (!s || !e || e < s) { showToast('日期有誤'); return; }
+
+  const oldStart = r.startDate, oldEnd = r.endDate;
+  const oldStatus = r.status, oldUser = r.userId;
+
+  const newUser = document.getElementById('editUserId').value;
+  const newStatus = document.getElementById('editStatus').value;
+  const newType = document.getElementById('editType').value;
+  const newPartner = document.getElementById('editPartnerId') ? document.getElementById('editPartnerId').value : r.partnerId;
+  const note = document.getElementById('editNote').value.trim();
+
+  const changes = [];
+  if (oldUser !== newUser) {
+    const om = state.members.find(x=>x.id===oldUser);
+    const nm = state.members.find(x=>x.id===newUser);
+    changes.push('申請人：' + (om?.name||oldUser) + ' → ' + (nm?.name||newUser));
+  }
+  if (oldStart !== s || oldEnd !== e) changes.push('日期：' + formatISO(oldStart) + '–' + formatISO(oldEnd) + ' → ' + formatISO(s) + '–' + formatISO(e));
+  if (oldStatus !== newStatus) changes.push('狀態：' + oldStatus + ' → ' + newStatus);
+  if (note) changes.push('備註：' + note);
+
+  r.userId = newUser; r.startDate = s; r.endDate = e;
+  r.days = countWorkdays(s, e); r.isLong = r.days >= 5;
+  r.type = newType; r.status = newStatus;
+  if (newPartner) r.partnerId = newPartner;
+
+  r.history.push({time: new Date().toISOString(), action: '主管修改｜' + (changes.length ? changes.join('；') : '內容更新')});
+  save(); closeModal(); renderRecords(); renderCalendar();
+  if (state.currentAdminTab === 0) renderAdminReview(document.getElementById('adminTabContent'));
+  showToast('✅ 已更新，立即生效');
+
+}
+
 
 // ==================== GROUP VIEW ====================
 function switchGroup(g) {
