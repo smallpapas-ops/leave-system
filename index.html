@@ -971,13 +971,11 @@ let state = {
   theme: {accent:'#2d6a4f',accent2:'#40916c',accentLight:'#d8f3dc'}
 };
 
-// ==================== SUPABASE STORAGE ====================
-// ⚙️ 請填入您的 Supabase 專案資訊
-const SUPA_URL = "https://inwbrkfeezigmdoxqjt.supabase.co";
-const SUPA_KEY = "sb_publishable_hoyYehZE6r_R9zPB3hr0TQ_1qMnQlwK";
-
-const TABLE   = "leave_store";
-const ROW_KEY = "main";
+// ==================== JSONBIN STORAGE ====================
+// 免費雲端儲存，無需複雜設定
+// ⚙️ 請填入您的 JSONBin 資訊（見下方設定說明）
+const JSONBIN_SECRET = "$2a$10$QWRJoYppBda4jJdXKXewVOohsNyQ1FoltZxsfJ.V1zyN6PCPPTpQK";
+let   JSONBIN_BIN_ID = "YOUR_BIN_ID"; // 第一次開啟APP會自動建立
 
 let pollingInterval = null;
 let lastUpdatedAt   = null;
@@ -987,52 +985,59 @@ function setSyncStatus(text) {
   if (el) el.textContent = text;
 }
 
-function supaHeaders() {
-  return {
-    'Content-Type':  'application/json',
-    'apikey':        SUPA_KEY,
-    'Authorization': 'Bearer ' + SUPA_KEY
-  };
-}
-
-async function supaGet() {
-  const res = await fetch(
-    SUPA_URL + '/rest/v1/' + TABLE + '?key=eq.' + ROW_KEY + '&select=value,updated_at',
-    { headers: supaHeaders() }
-  );
+async function jsonbinGet() {
+  const res = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID + '/latest', {
+    headers: { 'X-Master-Key': JSONBIN_SECRET }
+  });
   if (!res.ok) throw new Error('GET ' + res.status);
-  const rows = await res.json();
-  if (!rows || !rows.length) return null;
-  return { data: JSON.parse(rows[0].value), updatedAt: rows[0].updated_at };
+  const j = await res.json();
+  return { data: j.record, updatedAt: j.metadata?.updatedAt || '' };
 }
 
-async function supaUpsert(payload) {
-  const res = await fetch(
-    SUPA_URL + '/rest/v1/' + TABLE,
-    {
-      method:  'POST',
-      headers: { ...supaHeaders(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-      body:    JSON.stringify({
-        key:        ROW_KEY,
-        value:      JSON.stringify(payload),
-        updated_at: new Date().toISOString()
-      })
-    }
-  );
-  if (!res.ok) { const t = await res.text(); throw new Error('UPSERT ' + res.status + ': ' + t); }
+async function jsonbinPut(payload) {
+  const res = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_SECRET },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('PUT ' + res.status);
+  return await res.json();
+}
+
+async function jsonbinCreate(payload) {
+  const res = await fetch('https://api.jsonbin.io/v3/b', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': JSONBIN_SECRET,
+      'X-Bin-Name': 'leave-system',
+      'X-Bin-Private': 'true'
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('CREATE ' + res.status);
+  const j = await res.json();
+  return j.metadata.id;
 }
 
 async function save() {
-  // localStorage 備援
   try { localStorage.setItem('leaveSystem_v2', JSON.stringify({members:state.members,records:state.records,theme:state.theme})); } catch(e) {}
-  if (!SUPA_URL || !SUPA_KEY) return;
+  if (JSONBIN_SECRET === 'YOUR_SECRET_KEY') return;
   setSyncStatus('⏳ 同步中...');
   try {
-    await supaUpsert({ members: state.members, records: state.records, theme: state.theme });
+    const payload = { members: state.members, records: state.records, theme: state.theme, updatedAt: new Date().toISOString() };
+    if (JSONBIN_BIN_ID === 'YOUR_BIN_ID') {
+      // 第一次：自動建立 bin
+      JSONBIN_BIN_ID = await jsonbinCreate(payload);
+      localStorage.setItem('jsonbinId', JSONBIN_BIN_ID);
+      showToast('✅ 雲端空間建立成功！Bin ID: ' + JSONBIN_BIN_ID);
+    } else {
+      await jsonbinPut(payload);
+    }
     setSyncStatus('☁️ 已同步');
-    lastUpdatedAt = new Date().toISOString();
+    lastUpdatedAt = payload.updatedAt;
   } catch(e) {
-    console.error('Supabase 寫入失敗:', e);
+    console.error('JSONBin 寫入失敗:', e);
     setSyncStatus('⚠️ 離線（已存本機）');
   }
 }
@@ -1040,24 +1045,12 @@ async function save() {
 function loadFromLocal() {
   try {
     const d = localStorage.getItem('leaveSystem_v2');
-    if (d) {
-      const p = JSON.parse(d);
-      state.members = p.members || [];
-      state.records = p.records || [];
-      state.theme   = p.theme   || state.theme;
-    }
+    if (d) { const p = JSON.parse(d); state.members=p.members||[]; state.records=p.records||[]; state.theme=p.theme||state.theme; }
+    // 嘗試從 localStorage 還原 Bin ID
+    const savedId = localStorage.getItem('jsonbinId');
+    if (savedId && JSONBIN_BIN_ID === 'YOUR_BIN_ID') JSONBIN_BIN_ID = savedId;
   } catch(e) {}
   if (!state.members.length) state.members = DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
-}
-
-function renderAll() {
-  renderGroupList();
-  renderCalendar();
-  renderRecords();
-  if (state.adminLoggedIn && state.currentAdminTab === 0) {
-    const el = document.getElementById('adminTabContent');
-    if (el) renderAdminReview(el);
-  }
 }
 
 async function load() {
@@ -1065,25 +1058,32 @@ async function load() {
   applyTheme();
   renderAll();
 
-  if (!SUPA_URL || !SUPA_KEY) { setSyncStatus('⚙️ 未設定'); return; }
+  if (JSONBIN_SECRET === 'YOUR_SECRET_KEY') {
+    setSyncStatus('⚙️ 請設定金鑰');
+    return;
+  }
+  if (JSONBIN_BIN_ID === 'YOUR_BIN_ID') {
+    setSyncStatus('⏳ 初始化雲端...');
+    await save(); // 自動建立 bin
+    startPolling();
+    return;
+  }
 
   setSyncStatus('⏳ 連線中...');
   try {
-    const result = await supaGet();
-    if (result && result.data) {
+    const result = await jsonbinGet();
+    if (result && result.data && result.data.members) {
       state.members = result.data.members || state.members;
       state.records = result.data.records || state.records;
       state.theme   = result.data.theme   || state.theme;
       lastUpdatedAt = result.updatedAt;
       applyTheme();
       renderAll();
-      setSyncStatus('☁️ 已同步');
-    } else {
-      await save();
     }
+    setSyncStatus('☁️ 已同步');
     startPolling();
   } catch(e) {
-    console.error('Supabase 連線失敗:', e);
+    console.error('JSONBin 連線失敗:', e);
     setSyncStatus('⚠️ 離線模式');
   }
 }
@@ -1091,9 +1091,10 @@ async function load() {
 function startPolling() {
   if (pollingInterval) clearInterval(pollingInterval);
   pollingInterval = setInterval(async () => {
+    if (JSONBIN_BIN_ID === 'YOUR_BIN_ID') return;
     try {
-      const result = await supaGet();
-      if (!result) return;
+      const result = await jsonbinGet();
+      if (!result || !result.data) return;
       if (result.updatedAt !== lastUpdatedAt) {
         lastUpdatedAt = result.updatedAt;
         state.members = result.data.members || state.members;
@@ -1107,6 +1108,15 @@ function startPolling() {
   }, 20000);
 }
 
+function renderAll() {
+  renderGroupList();
+  renderCalendar();
+  renderRecords();
+  if (state.adminLoggedIn && state.currentAdminTab === 0) {
+    const el = document.getElementById('adminTabContent');
+    if (el) renderAdminReview(el);
+  }
+}
 
 // ==================== STATE ====================
 let state = {
