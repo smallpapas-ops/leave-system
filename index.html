@@ -607,7 +607,7 @@ body::after { content: ''; display: block; height: 16px; }
     <div class="header-sub" id="todayLabel"></div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
-    <span id="syncStatus" style="font-size:11px;opacity:0.85;white-space:nowrap">⏳ 連線中...</span>
+    <span id="syncStatus" style="font-size:11px;opacity:0.85;white-space:nowrap;cursor:pointer" onclick="showSyncDebug()">⏳ 連線中...</span>
     <button class="admin-btn" onclick="openAdmin()">🔐 主管</button>
   </div>
 </div>
@@ -1020,27 +1020,6 @@ async function jsonbinCreate(payload) {
   return j.metadata.id;
 }
 
-async function save() {
-  try { localStorage.setItem('leaveSystem_v2', JSON.stringify({members:state.members,records:state.records,theme:state.theme})); } catch(e) {}
-  if (JSONBIN_SECRET === 'YOUR_SECRET_KEY') return;
-  setSyncStatus('⏳ 同步中...');
-  try {
-    const payload = { members: state.members, records: state.records, theme: state.theme, updatedAt: new Date().toISOString() };
-    if (JSONBIN_BIN_ID === 'YOUR_BIN_ID') {
-      // 第一次：自動建立 bin
-      JSONBIN_BIN_ID = await jsonbinCreate(payload);
-      localStorage.setItem('jsonbinId', JSONBIN_BIN_ID);
-      showToast('✅ 雲端空間建立成功！Bin ID: ' + JSONBIN_BIN_ID);
-    } else {
-      await jsonbinPut(payload);
-    }
-    setSyncStatus('☁️ 已同步');
-    lastUpdatedAt = payload.updatedAt;
-  } catch(e) {
-    console.error('JSONBin 寫入失敗:', e);
-    setSyncStatus('⚠️ 離線（已存本機）');
-  }
-}
 
 function loadFromLocal() {
   try {
@@ -1054,24 +1033,32 @@ function loadFromLocal() {
 }
 
 async function load() {
+  // 嘗試從 localStorage 讀取金鑰設定
+  const savedKey = localStorage.getItem('jb_key');
+  const savedBin = localStorage.getItem('jb_bin');
+  if (savedKey) JSONBIN_SECRET_DYN = savedKey;
+  if (savedBin) JSONBIN_BIN_ID = savedBin;
+
   loadFromLocal();
   applyTheme();
   renderAll();
 
-  if (JSONBIN_SECRET === 'YOUR_SECRET_KEY') {
-    setSyncStatus('⚙️ 請設定金鑰');
-    return;
-  }
-  if (JSONBIN_BIN_ID === 'YOUR_BIN_ID') {
-    setSyncStatus('⏳ 初始化雲端...');
-    await save(); // 自動建立 bin
-    startPolling();
+  const key = JSONBIN_SECRET_DYN || JSONBIN_SECRET;
+  if (!key || key === 'YOUR_SECRET_KEY') {
+    setSyncStatus('⚙️ 請設定雲端');
+    setTimeout(showCloudSetup, 800);
     return;
   }
 
   setSyncStatus('⏳ 連線中...');
   try {
-    const result = await jsonbinGet();
+    if (JSONBIN_BIN_ID === 'YOUR_BIN_ID') {
+      setSyncStatus('⏳ 初始化雲端...');
+      await saveToCloud(key);
+      startPolling();
+      return;
+    }
+    const result = await jsonbinGetWithKey(key);
     if (result && result.data && result.data.members) {
       state.members = result.data.members || state.members;
       state.records = result.data.records || state.records;
@@ -1086,6 +1073,116 @@ async function load() {
     console.error('JSONBin 連線失敗:', e);
     setSyncStatus('⚠️ 離線模式');
   }
+}
+
+let JSONBIN_SECRET_DYN = '';
+
+async function jsonbinGetWithKey(key) {
+  const bid = JSONBIN_BIN_ID;
+  if (bid === 'YOUR_BIN_ID') return null;
+  const res = await fetch('https://api.jsonbin.io/v3/b/' + bid + '/latest', {
+    headers: { 'X-Master-Key': key }
+  });
+  if (!res.ok) throw new Error('GET ' + res.status);
+  const j = await res.json();
+  return { data: j.record, updatedAt: j.metadata?.updatedAt || '' };
+}
+
+async function saveToCloud(key) {
+  const payload = { members: state.members, records: state.records, theme: state.theme, updatedAt: new Date().toISOString() };
+  if (JSONBIN_BIN_ID === 'YOUR_BIN_ID') {
+    const res = await fetch('https://api.jsonbin.io/v3/b', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'X-Master-Key': key, 'X-Bin-Name':'leave-system', 'X-Bin-Private':'true' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('CREATE ' + res.status);
+    const j = await res.json();
+    JSONBIN_BIN_ID = j.metadata.id;
+    localStorage.setItem('jb_bin', JSONBIN_BIN_ID);
+    showToast('✅ 雲端建立成功！');
+  } else {
+    const res = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID, {
+      method: 'PUT',
+      headers: { 'Content-Type':'application/json', 'X-Master-Key': key },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('PUT ' + res.status);
+  }
+  setSyncStatus('☁️ 已同步');
+  lastUpdatedAt = payload.updatedAt;
+}
+
+async function save() {
+  try { localStorage.setItem('leaveSystem_v2', JSON.stringify({members:state.members,records:state.records,theme:state.theme})); } catch(e) {}
+  const key = JSONBIN_SECRET_DYN || JSONBIN_SECRET;
+  if (!key || key==='YOUR_SECRET_KEY' || JSONBIN_BIN_ID==='YOUR_BIN_ID') return;
+  setSyncStatus('⏳ 同步中...');
+  try {
+    await saveToCloud(key);
+  } catch(e) {
+    console.error('儲存失敗:', e);
+    setSyncStatus('⚠️ 離線（已存本機）');
+  }
+}
+
+function showCloudSetup() {
+  const modal = document.getElementById('modalContent');
+  const savedKey = localStorage.getItem('jb_key') || '';
+  const savedBin = localStorage.getItem('jb_bin') || '';
+  modal.innerHTML =
+    '<div class="modal-title">☁️ 雲端連線設定 <button class="modal-close" onclick="closeModal()">✕</button></div>' +
+    '<div class="alert alert-info" style="margin-bottom:12px">請到 <strong>jsonbin.io</strong> 登入後，從右上角帳號 → API Keys 複製 Secret Key</div>' +
+    '<div class="form-group"><label class="form-label">Secret Key（$2a$ 開頭）</label>' +
+    '<input class="form-control" id="setupKey" value="' + savedKey + '" placeholder="$2a$10$..."></div>' +
+    '<div class="form-group"><label class="form-label">Bin ID（第一次留空，會自動建立）</label>' +
+    '<input class="form-control" id="setupBin" value="' + savedBin + '" placeholder="留空自動建立"></div>' +
+    '<button class="btn btn-primary" onclick="applyCloudSetup()" style="margin-top:4px">🔗 連線</button>' +
+    '<button class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="closeModal()">稍後設定（離線使用）</button>';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+async function applyCloudSetup() {
+  const key = document.getElementById('setupKey').value.trim();
+  const bin = document.getElementById('setupBin').value.trim();
+  if (!key) { showToast('請輸入 Secret Key'); return; }
+  localStorage.setItem('jb_key', key);
+  JSONBIN_SECRET_DYN = key;
+  if (bin) { localStorage.setItem('jb_bin', bin); JSONBIN_BIN_ID = bin; }
+  else { JSONBIN_BIN_ID = 'YOUR_BIN_ID'; }
+  closeModal();
+  setSyncStatus('⏳ 連線中...');
+  try {
+    await saveToCloud(key);
+    setSyncStatus('☁️ 已同步');
+    showToast('✅ 雲端連線成功！');
+    if (JSONBIN_BIN_ID !== 'YOUR_BIN_ID') {
+      localStorage.setItem('jb_bin', JSONBIN_BIN_ID);
+    }
+    startPolling();
+  } catch(e) {
+    setSyncStatus('⚠️ 連線失敗');
+    showToast('連線失敗：' + e.message);
+  }
+}
+
+function showSyncDebug(errMsg) {
+  showCloudSetup();
+}
+
+function showSyncDebug(errMsg) {
+  const binId = JSONBIN_BIN_ID;
+  const hasKey = JSONBIN_SECRET && !JSONBIN_SECRET.includes('YOUR');
+  const modal = document.getElementById('modalContent');
+  modal.innerHTML =
+    '<div class="modal-title">🔧 連線狀態 <button class="modal-close" onclick="closeModal()">✕</button></div>' +
+    '<div class="alert ' + (hasKey?'alert-success':'alert-danger') + '">金鑰：' + (hasKey?'✅ 已設定':'❌ 未設定') + '</div>' +
+    '<div class="alert ' + (binId!=='YOUR_BIN_ID'?'alert-success':'alert-warning') + '">Bin ID：' + (binId!=='YOUR_BIN_ID'?'✅ '+binId:'⚠️ 尚未建立') + '</div>' +
+    (errMsg ? '<div class="alert alert-danger">錯誤：' + errMsg + '</div>' : '') +
+    '<div style="margin-top:12px">' +
+    '<button class="btn btn-primary" onclick="closeModal();load()">🔄 重新連線</button>' +
+    '</div>';
+  document.getElementById('modalOverlay').classList.add('open');
 }
 
 function startPolling() {
