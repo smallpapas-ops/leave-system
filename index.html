@@ -15,8 +15,6 @@
 <title>智慧特休預約系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
@@ -974,135 +972,111 @@ let state = {
   theme: {accent:'#2d6a4f',accent2:'#40916c',accentLight:'#d8f3dc'}
 };
 
-// ==================== FIREBASE STORAGE ====================
-const firebaseConfig = {
-  databaseURL: "https://leave-system-3b851-default-rtdb.asia-southeast1.firebasedatabase.app"
-};
+// ==================== FIREBASE REST STORAGE ====================
+// 使用 REST API，不需要 SDK，相容性最佳
+const DB_URL = "https://leave-system-3b851-default-rtdb.asia-southeast1.firebasedatabase.app";
 
-let db = null;
-let firebaseReady = false;
-let firebaseTimeout = null;
+let syncTimer = null;
+let lastSyncedData = null;
+let pollingInterval = null;
 
 function setSyncStatus(text) {
   const el = document.getElementById('syncStatus');
   if (el) el.textContent = text;
 }
 
-function initFirebase() {
-  // 設定 10 秒 timeout，逾時自動切換離線模式
-  firebaseTimeout = setTimeout(() => {
-    if (!firebaseReady) {
-      console.warn('Firebase 連線逾時，切換離線模式');
-      setSyncStatus('⚠️ 離線模式');
-      loadFromLocal();
-      renderAll();
-    }
-  }, 10000);
-
-  try {
-    if (typeof firebase === 'undefined') {
-      clearTimeout(firebaseTimeout);
-      setSyncStatus('⚠️ 離線模式');
-      loadFromLocal();
-      renderAll();
-      return;
-    }
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    db = firebase.database();
-
-    // 先做一次 once 取值確認連線，再訂閱即時更新
-    db.ref('leaveSystem').once('value').then(snapshot => {
-      clearTimeout(firebaseTimeout);
-      firebaseReady = true;
-      setSyncStatus('☁️ 已同步');
-
-      const data = snapshot.val();
-      if (data) {
-        state.members = data.members || DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
-        state.records = data.records || [];
-        state.theme = data.theme || state.theme;
-      } else {
-        state.members = DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
-        state.records = [];
-        save();
-      }
-      applyTheme();
-      renderAll();
-
-      // 訂閱即時更新
-      db.ref('leaveSystem').on('value', snapshot => {
-        const d = snapshot.val();
-        if (!d) return;
-        state.members = d.members || state.members;
-        state.records = d.records || state.records;
-        state.theme = d.theme || state.theme;
-        applyTheme();
-        renderAll();
-        setSyncStatus('☁️ 已同步');
-      }, err => {
-        console.error('即時監聽失敗:', err);
-        setSyncStatus('⚠️ 連線中斷');
-      });
-
-    }).catch(err => {
-      clearTimeout(firebaseTimeout);
-      console.error('Firebase 首次讀取失敗:', err);
-      setSyncStatus('⚠️ 離線模式');
-      loadFromLocal();
-      renderAll();
-    });
-
-  } catch(e) {
-    clearTimeout(firebaseTimeout);
-    console.error('Firebase 初始化失敗:', e);
-    setSyncStatus('⚠️ 離線模式');
-    loadFromLocal();
-    renderAll();
-  }
+async function firebaseGet() {
+  const res = await fetch(DB_URL + '/leaveSystem.json');
+  if (!res.ok) throw new Error('GET failed: ' + res.status);
+  return await res.json();
 }
 
-function renderAll() {
-  renderGroupList();
-  renderCalendar();
-  renderRecords();
-  if (state.adminLoggedIn && state.currentAdminTab === 0) {
-    const el = document.getElementById('adminTabContent');
-    if (el) renderAdminReview(el);
-  }
+async function firebasePut(data) {
+  const res = await fetch(DB_URL + '/leaveSystem.json', {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('PUT failed: ' + res.status);
+  return await res.json();
 }
 
-function save() {
-  // 同時存 localStorage 作為離線備援
+function applyRemoteData(data) {
+  if (!data) return false;
+  state.members = data.members || DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
+  state.records = data.records || [];
+  state.theme   = data.theme   || state.theme;
+  return true;
+}
+
+async function save() {
+  // 先存 localStorage 備援
   try { localStorage.setItem('leaveSystem_v2', JSON.stringify({members:state.members,records:state.records,theme:state.theme})); } catch(e) {}
-  // 寫入 Firebase
-  if (firebaseReady && db) {
-    document.getElementById('syncStatus').textContent = '⏳ 同步中...';
-    db.ref('leaveSystem').set({
-      members: state.members,
-      records: state.records,
-      theme: state.theme,
-      updatedAt: new Date().toISOString()
-    }).then(() => {
-      document.getElementById('syncStatus').textContent = '☁️ 已同步';
-    }).catch(e => {
-      console.error('Firebase 寫入失敗:', e);
-      document.getElementById('syncStatus').textContent = '⚠️ 同步失敗';
-    });
+  // 寫入 Firebase REST
+  setSyncStatus('⏳ 同步中...');
+  try {
+    await firebasePut({members:state.members, records:state.records, theme:state.theme, updatedAt: new Date().toISOString()});
+    setSyncStatus('☁️ 已同步');
+  } catch(e) {
+    console.error('Firebase 寫入失敗:', e);
+    setSyncStatus('⚠️ 離線（已存本機）');
   }
 }
 
 function loadFromLocal() {
   try {
     const d = localStorage.getItem('leaveSystem_v2');
-    if (d) {
-      const parsed = JSON.parse(d);
-      state.members = parsed.members || [];
-      state.records = parsed.records || [];
-      state.theme = parsed.theme || state.theme;
-    }
+    if (d) { const p = JSON.parse(d); state.members = p.members||[]; state.records = p.records||[]; state.theme = p.theme||state.theme; }
   } catch(e) {}
   if (!state.members.length) state.members = DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
 }
+
+async function load() {
+  // 先顯示本機資料
+  loadFromLocal();
+  applyTheme();
+  renderAll();
+  setSyncStatus('⏳ 連線中...');
+
+  try {
+    const data = await firebaseGet();
+    if (applyRemoteData(data)) {
+      applyTheme();
+      renderAll();
+      setSyncStatus('☁️ 已同步');
+    } else {
+      // 雲端無資料，將本機資料寫上去
+      await save();
+    }
+    // 開始輪詢（每 15 秒同步一次）
+    startPolling();
+  } catch(e) {
+    console.error('Firebase 讀取失敗:', e);
+    setSyncStatus('⚠️ 離線模式');
+    // 仍可正常使用，資料存本機
+  }
+}
+
+function startPolling() {
+  if (pollingInterval) clearInterval(pollingInterval);
+  pollingInterval = setInterval(async () => {
+    try {
+      const data = await firebaseGet();
+      if (!data) return;
+      const remoteTime = data.updatedAt || '';
+      const localTime  = lastSyncedData?.updatedAt || '';
+      if (remoteTime !== localTime) {
+        lastSyncedData = data;
+        applyRemoteData(data);
+        applyTheme();
+        renderAll();
+        setSyncStatus('☁️ 已同步');
+      }
+    } catch(e) { setSyncStatus('⚠️ 連線中斷'); }
+  }, 15000);
+}
+
+
 
 function load() {
   loadFromLocal(); // 先載入 localStorage 讓畫面快速顯示
