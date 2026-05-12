@@ -14,7 +14,6 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <title>智慧特休預約系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
-<!-- Firebase SDK -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
@@ -972,53 +971,68 @@ let state = {
   theme: {accent:'#2d6a4f',accent2:'#40916c',accentLight:'#d8f3dc'}
 };
 
-// ==================== FIREBASE REST STORAGE ====================
-// 使用 REST API，不需要 SDK，相容性最佳
-const DB_URL = "https://leave-system-3b851-default-rtdb.asia-southeast1.firebasedatabase.app";
+// ==================== SUPABASE STORAGE ====================
+// ⚙️ 請填入您的 Supabase 專案資訊
+const SUPA_URL = "https://inwbrkfeezigmdoxqjt.supabase.co";
+const SUPA_KEY = "sb_publishable_hoyYehZE6r_R9zPB3hr0TQ_1qMnQlwK";
 
-let syncTimer = null;
-let lastSyncedData = null;
+const TABLE   = "leave_store";
+const ROW_KEY = "main";
+
 let pollingInterval = null;
+let lastUpdatedAt   = null;
 
 function setSyncStatus(text) {
   const el = document.getElementById('syncStatus');
   if (el) el.textContent = text;
 }
 
-async function firebaseGet() {
-  const res = await fetch(DB_URL + '/leaveSystem.json');
-  if (!res.ok) throw new Error('GET failed: ' + res.status);
-  return await res.json();
+function supaHeaders() {
+  return {
+    'Content-Type':  'application/json',
+    'apikey':        SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY
+  };
 }
 
-async function firebasePut(data) {
-  const res = await fetch(DB_URL + '/leaveSystem.json', {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error('PUT failed: ' + res.status);
-  return await res.json();
+async function supaGet() {
+  const res = await fetch(
+    SUPA_URL + '/rest/v1/' + TABLE + '?key=eq.' + ROW_KEY + '&select=value,updated_at',
+    { headers: supaHeaders() }
+  );
+  if (!res.ok) throw new Error('GET ' + res.status);
+  const rows = await res.json();
+  if (!rows || !rows.length) return null;
+  return { data: JSON.parse(rows[0].value), updatedAt: rows[0].updated_at };
 }
 
-function applyRemoteData(data) {
-  if (!data) return false;
-  state.members = data.members || DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
-  state.records = data.records || [];
-  state.theme   = data.theme   || state.theme;
-  return true;
+async function supaUpsert(payload) {
+  const res = await fetch(
+    SUPA_URL + '/rest/v1/' + TABLE,
+    {
+      method:  'POST',
+      headers: { ...supaHeaders(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body:    JSON.stringify({
+        key:        ROW_KEY,
+        value:      JSON.stringify(payload),
+        updated_at: new Date().toISOString()
+      })
+    }
+  );
+  if (!res.ok) { const t = await res.text(); throw new Error('UPSERT ' + res.status + ': ' + t); }
 }
 
 async function save() {
-  // 先存 localStorage 備援
+  // localStorage 備援
   try { localStorage.setItem('leaveSystem_v2', JSON.stringify({members:state.members,records:state.records,theme:state.theme})); } catch(e) {}
-  // 寫入 Firebase REST
+  if (!SUPA_URL || !SUPA_KEY) return;
   setSyncStatus('⏳ 同步中...');
   try {
-    await firebasePut({members:state.members, records:state.records, theme:state.theme, updatedAt: new Date().toISOString()});
+    await supaUpsert({ members: state.members, records: state.records, theme: state.theme });
     setSyncStatus('☁️ 已同步');
+    lastUpdatedAt = new Date().toISOString();
   } catch(e) {
-    console.error('Firebase 寫入失敗:', e);
+    console.error('Supabase 寫入失敗:', e);
     setSyncStatus('⚠️ 離線（已存本機）');
   }
 }
@@ -1026,34 +1040,51 @@ async function save() {
 function loadFromLocal() {
   try {
     const d = localStorage.getItem('leaveSystem_v2');
-    if (d) { const p = JSON.parse(d); state.members = p.members||[]; state.records = p.records||[]; state.theme = p.theme||state.theme; }
+    if (d) {
+      const p = JSON.parse(d);
+      state.members = p.members || [];
+      state.records = p.records || [];
+      state.theme   = p.theme   || state.theme;
+    }
   } catch(e) {}
   if (!state.members.length) state.members = DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
 }
 
+function renderAll() {
+  renderGroupList();
+  renderCalendar();
+  renderRecords();
+  if (state.adminLoggedIn && state.currentAdminTab === 0) {
+    const el = document.getElementById('adminTabContent');
+    if (el) renderAdminReview(el);
+  }
+}
+
 async function load() {
-  // 先顯示本機資料
   loadFromLocal();
   applyTheme();
   renderAll();
-  setSyncStatus('⏳ 連線中...');
 
+  if (!SUPA_URL || !SUPA_KEY) { setSyncStatus('⚙️ 未設定'); return; }
+
+  setSyncStatus('⏳ 連線中...');
   try {
-    const data = await firebaseGet();
-    if (applyRemoteData(data)) {
+    const result = await supaGet();
+    if (result && result.data) {
+      state.members = result.data.members || state.members;
+      state.records = result.data.records || state.records;
+      state.theme   = result.data.theme   || state.theme;
+      lastUpdatedAt = result.updatedAt;
       applyTheme();
       renderAll();
       setSyncStatus('☁️ 已同步');
     } else {
-      // 雲端無資料，將本機資料寫上去
       await save();
     }
-    // 開始輪詢（每 15 秒同步一次）
     startPolling();
   } catch(e) {
-    console.error('Firebase 讀取失敗:', e);
+    console.error('Supabase 連線失敗:', e);
     setSyncStatus('⚠️ 離線模式');
-    // 仍可正常使用，資料存本機
   }
 }
 
@@ -1061,27 +1092,38 @@ function startPolling() {
   if (pollingInterval) clearInterval(pollingInterval);
   pollingInterval = setInterval(async () => {
     try {
-      const data = await firebaseGet();
-      if (!data) return;
-      const remoteTime = data.updatedAt || '';
-      const localTime  = lastSyncedData?.updatedAt || '';
-      if (remoteTime !== localTime) {
-        lastSyncedData = data;
-        applyRemoteData(data);
+      const result = await supaGet();
+      if (!result) return;
+      if (result.updatedAt !== lastUpdatedAt) {
+        lastUpdatedAt = result.updatedAt;
+        state.members = result.data.members || state.members;
+        state.records = result.data.records || state.records;
+        state.theme   = result.data.theme   || state.theme;
         applyTheme();
         renderAll();
         setSyncStatus('☁️ 已同步');
       }
     } catch(e) { setSyncStatus('⚠️ 連線中斷'); }
-  }, 15000);
+  }, 20000);
 }
 
 
-
-function load() {
-  loadFromLocal(); // 先載入 localStorage 讓畫面快速顯示
-  initFirebase();  // 然後連 Firebase 取最新資料
-}
+// ==================== STATE ====================
+let state = {
+  members: [],
+  records: [],
+  currentFilter: 'all',
+  currentGroup: 'A',
+  calYear: 2026,
+  calMonth: 5,
+  applyType: 'general',
+  leaveLength: 'short',
+  selectedApplyUserId: null,
+  selectedSwapPartnerId: null,
+  adminLoggedIn: false,
+  currentAdminTab: 0,
+  theme: {accent:'#2d6a4f',accent2:'#40916c',accentLight:'#d8f3dc'}
+};
 
 // ==================== LEAVE CALCULATION ====================
 function calcLeave(joinDateStr, today, manualLeave) {
