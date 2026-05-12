@@ -1982,6 +1982,7 @@ function showQR() {
 }
 
 function renderAdminMembers(container) {
+  const sorted = [...state.members].sort((a,b) => a.group.localeCompare(b.group) || a.join.localeCompare(b.join));
   container.innerHTML = `
     <div class="card">
       <div class="card-title"><div class="icon">➕</div>新增組員</div>
@@ -2015,18 +2016,93 @@ function renderAdminMembers(container) {
       <button class="btn btn-primary" onclick="addMember()">新增組員</button>
     </div>
     <div class="section-label">現有成員（${state.members.length}人）</div>
-    ${state.members.map(m => {
+    ${sorted.map(m => {
       const leave = getMemberLeave(m);
-      return `<div class="record-card">
-        <div class="record-header">
+      const used = usedLeave(m.id);
+      return `<div class="record-card" id="memberRow_${m.id}">
+        <div class="record-header" style="align-items:center">
           <div>
-            <div class="record-name">${m.name} <span style="font-size:11px;color:var(--text3)">${m.id}</span></div>
-            <div class="record-meta">${m.group}組 ・ 到職 ${formatISO(m.join)} ・ 特休 ${leave} 天</div>
+            <div class="record-name">${m.name} <span style="font-size:11px;color:var(--text3);font-weight:400">${m.id}</span>
+              <span class="badge ${m.group==='A'?'badge-success':'badge-info'}" style="margin-left:4px">${m.group}組</span>
+            </div>
+            <div class="record-meta">到職 ${formatISO(m.join)} ・ 特休 ${leave} 天・已用 ${used} 天</div>
           </div>
-          <button class="btn btn-sm btn-danger" onclick="removeMember('${m.id}')">移除</button>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm btn-outline" onclick="openEditMember('${m.id}')">✏️ 修改</button>
+            <button class="btn btn-sm btn-danger" onclick="removeMember('${m.id}')">移除</button>
+          </div>
         </div>
       </div>`;
     }).join('')}`;
+}
+
+function openEditMember(id) {
+  const m = state.members.find(x => x.id === id);
+  if (!m) return;
+  const leave = getMemberLeave(m);
+  const modal = document.getElementById('modalContent');
+  modal.innerHTML = `
+    <div class="modal-title">✏️ 修改組員資料 <button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="alert alert-info" style="margin-bottom:12px">員工編號：${m.id}</div>
+    <div class="form-group">
+      <label class="form-label">姓名</label>
+      <input class="form-control" id="editMName" value="${m.name}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">到職日</label>
+      <input type="date" class="form-control" id="editMJoin" value="${m.join}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">組別</label>
+      <select class="form-control" id="editMGroup">
+        <option value="A" ${m.group==='A'?'selected':''}>A 組</option>
+        <option value="B" ${m.group==='B'?'selected':''}>B 組</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">手動特休天數（目前自動計算：${calcLeave(m.join, new Date(), null)} 天）</label>
+      <input class="form-control" id="editMLeave" value="${m.manualLeave ?? ''}" placeholder="留空=自動計算">
+    </div>
+    <div class="form-group">
+      <label class="form-label">員工編號（可修改）</label>
+      <input class="form-control" id="editMId" value="${m.id}">
+    </div>
+    <button class="btn btn-primary" style="margin-top:4px" onclick="saveEditMember('${m.id}')">儲存變更</button>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function saveEditMember(oldId) {
+  const m = state.members.find(x => x.id === oldId);
+  if (!m) return;
+  const newId   = document.getElementById('editMId').value.trim();
+  const newName = document.getElementById('editMName').value.trim();
+  const newJoin = document.getElementById('editMJoin').value;
+  const newGroup= document.getElementById('editMGroup').value;
+  const newLeave= document.getElementById('editMLeave').value.trim();
+
+  if (!newName || !newJoin || !newId) { showToast('姓名、員編、到職日不可空白'); return; }
+  if (newId !== oldId && state.members.find(x => x.id === newId)) { showToast('員工編號已存在'); return; }
+
+  // Update records that reference this member if ID changed
+  if (newId !== oldId) {
+    state.records.forEach(r => {
+      if (r.userId === oldId) r.userId = newId;
+      if (r.partnerId === oldId) r.partnerId = newId;
+    });
+  }
+
+  m.id      = newId;
+  m.name    = newName;
+  m.join    = newJoin;
+  m.group   = newGroup;
+  m.manualLeave = newLeave !== '' ? parseInt(newLeave) : null;
+
+  save();
+  closeModal();
+  showToast(`✅ ${newName} 資料已更新`);
+  renderGroupList();
+  renderAdminMembers(document.getElementById('adminTabContent'));
 }
 
 function addMember() {
