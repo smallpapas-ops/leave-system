@@ -1242,6 +1242,66 @@ function calcGenDays() {
   }
 }
 
+// 找出整段假期中，每個工作日是否有同組長假佔用，回傳衝突工作日清單
+function findDayLevelConflicts(startStr, endStr, userId, excludeId, statusFilter) {
+  const member = state.members.find(m => m.id === userId);
+  if (!member) return [];
+  // 建立同組長假的工作日集合 { 'YYYY-MM-DD': {name, status} }
+  const blockedDays = {};
+  state.records.forEach(r => {
+    if (r.id === excludeId || r.userId === userId) return;
+    if (!statusFilter.includes(r.status)) return;
+    const rm = state.members.find(m => m.id === r.userId);
+    if (!rm || rm.group !== member.group) return;
+    if (countWorkdays(r.startDate, r.endDate) < 5) return;
+    // 展開這筆紀錄的每個工作日
+    const cur = new Date(r.startDate);
+    const end = new Date(r.endDate);
+    while (cur <= end) {
+      const ds = toISO(cur);
+      if (!isNonWorkday(cur)) {
+        if (!blockedDays[ds]) blockedDays[ds] = [];
+        blockedDays[ds].push({ name: rm.name, status: r.status, recId: r.id });
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+  });
+  // 檢查申請區間的每個工作日
+  const conflicts = [];
+  const cur = new Date(startStr);
+  const end = new Date(endStr);
+  while (cur <= end) {
+    const ds = toISO(cur);
+    if (!isNonWorkday(cur) && blockedDays[ds]) {
+      conflicts.push({ date: ds, blockers: blockedDays[ds] });
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return conflicts;
+}
+
+// 建議可分段申請的日期區間（衝突日之外的工作日段）
+function suggestSplitRanges(startStr, endStr, conflictDates) {
+  const conflictSet = new Set(conflictDates);
+  const segments = [];
+  let segStart = null;
+  const cur = new Date(startStr);
+  const end = new Date(endStr);
+  while (cur <= end) {
+    const ds = toISO(cur);
+    if (!isNonWorkday(cur)) {
+      if (!conflictSet.has(ds)) {
+        if (!segStart) segStart = ds;
+      } else {
+        if (segStart) { segments.push({ s: segStart, e: toISO(new Date(cur.getTime() - 86400000)) }); segStart = null; }
+      }
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  if (segStart) segments.push({ s: segStart, e: endStr });
+  return segments;
+}
+
 function checkLongLeaveBlock(startStr, endStr, userId, excludeId, blk, isSwap) {
   const member = state.members.find(m => m.id === userId);
   if (!member) return false;
@@ -1259,31 +1319,14 @@ function checkLongLeaveBlock(startStr, endStr, userId, excludeId, blk, isSwap) {
     return false;
   }
 
-  // 同組已完成（approved）長假
-  const sameGroupApproved = state.records.filter(r => {
-    if (r.id === excludeId || r.userId === userId) return false;
-    if (r.status !== 'approved') return false;
-    const rm = state.members.find(m => m.id === r.userId);
-    if (!rm || rm.group !== member.group) return false;
-    if (countWorkdays(r.startDate, r.endDate) < 5) return false;
-    return datesOverlap(startStr, endStr, r.startDate, r.endDate);
-  });
-
-  // 同組待審核（pending）長假
-  const sameGroupPending = state.records.filter(r => {
-    if (r.id === excludeId || r.userId === userId) return false;
-    if (r.status !== 'pending') return false;
-    const rm = state.members.find(m => m.id === r.userId);
-    if (!rm || rm.group !== member.group) return false;
-    if (countWorkdays(r.startDate, r.endDate) < 5) return false;
-    return datesOverlap(startStr, endStr, r.startDate, r.endDate);
-  });
-
   if (isSwap) {
-    // 對調特例：同組已有 approved → 允許1個對調名額
-    if (sameGroupApproved.length > 0) {
-      const names = sameGroupApproved.map(r => state.members.find(m=>m.id===r.userId)?.name || '').join('、');
-      // 檢查對調名額是否已被佔用
+    // 對調：逐日檢查 approved 長假衝突
+    const approvedConflicts = findDayLevelConflicts(startStr, endStr, userId, excludeId, ['approved']);
+    const pendingConflicts  = findDayLevelConflicts(startStr, endStr, userId, excludeId, ['pending']);
+
+    if (approvedConflicts.length > 0) {
+      // 全段都被 approved 佔 → 允許對調（原有邏輯）
+      const allBlocked = approvedConflicts.length === days;
       const swapConflict = state.records.filter(r => {
         if (r.id === excludeId || r.userId === userId) return false;
         if (r.type !== 'swap') return false;
@@ -1294,32 +1337,54 @@ function checkLongLeaveBlock(startStr, endStr, userId, excludeId, blk, isSwap) {
         return datesOverlap(startStr, endStr, r.startDate, r.endDate);
       });
       if (swapConflict.length > 0) {
-        const snames = swapConflict.map(r => state.members.find(m=>m.id===r.userId)?.name || '').join('、');
+        const snames = swapConflict.map(r => state.members.find(m=>m.id===r.userId)?.name||'').join('、');
         if (blk) blk.innerHTML = '<div class="alert alert-danger">該假期 ' + member.group + ' 組對調名額已被 ' + snames + ' 申請中</div>';
         return false;
       }
+      const names = [...new Set(approvedConflicts.flatMap(c => c.blockers.map(b => b.name)))].join('、');
       if (blk) blk.innerHTML = '<div class="alert alert-info">💡 ' + member.group + '組 ' + names + ' 已完成預約同段假期，允許你透過對調申請加入。</div>';
       return true;
     }
-    // 同組有 pending 時不允許對調（避免雙重佔位）
-    if (sameGroupPending.length > 0) {
-      const names = sameGroupPending.map(r => state.members.find(m=>m.id===r.userId)?.name || '').join('、');
+    if (pendingConflicts.length > 0) {
+      const names = [...new Set(pendingConflicts.flatMap(c => c.blockers.map(b => b.name)))].join('、');
       if (blk) blk.innerHTML = '<div class="alert alert-warning">該假期 ' + member.group + ' 組有待審核長假（' + names + '），請等確認核准後再申請對調</div>';
       return false;
     }
-    // 同組無任何長假，對調也照一般規則
     if (blk) blk.innerHTML = '';
     return true;
+
   } else {
-    // 一般申請：有任何衝突就擋
-    const conflict = [...sameGroupApproved, ...sameGroupPending];
-    if (conflict.length > 0) {
-      const names = conflict.map(r => state.members.find(m=>m.id===r.userId)?.name || '').join('、');
-      if (blk) blk.innerHTML = '<div class="alert alert-danger">該假期 ' + member.group + ' 組已有長假預約名額（' + names + '）</div>';
-      return false;
+    // 一般申請：逐日檢查 approved + pending 衝突
+    const allConflicts = findDayLevelConflicts(startStr, endStr, userId, excludeId, ['approved', 'pending']);
+    if (allConflicts.length === 0) { if (blk) blk.innerHTML = ''; return true; }
+
+    // 有衝突 → 找出衝突日期、衝突人員、建議分段
+    const conflictDates = allConflicts.map(c => c.date);
+    const blockerNames = [...new Set(allConflicts.flatMap(c => c.blockers.map(b => b.name)))].join('、');
+    const firstConflict = conflictDates[0];
+    const lastConflict  = conflictDates[conflictDates.length - 1];
+
+    // 建議分段
+    const segments = suggestSplitRanges(startStr, endStr, new Set(conflictDates));
+    let segHtml = '';
+    if (segments.length > 0) {
+      segHtml = '<div style="margin-top:6px;font-size:12px"><strong>建議分段申請：</strong><ul style="margin:4px 0 0 16px;padding:0">' +
+        segments.map(seg => {
+          const d = countWorkdays(seg.s, seg.e);
+          return '<li>' + formatISO(seg.s) + ' – ' + formatISO(seg.e) + '（' + d + ' 工作天）</li>';
+        }).join('') +
+        '</ul></div>';
     }
+
+    if (blk) blk.innerHTML =
+      '<div class="alert alert-danger">' +
+        '⛔ 假期中有 ' + allConflicts.length + ' 個工作日（' + formatISO(firstConflict) + ' – ' + formatISO(lastConflict) + '）' +
+        '與 ' + member.group + ' 組 <strong>' + blockerNames + '</strong> 的預約衝突，不予通過。' +
+        segHtml +
+        '<div style="margin-top:6px;font-size:12px">💡 也可改為<strong>對調申請</strong>（若同組已有人完成預約）</div>' +
+      '</div>';
+    return false;
   }
-  return true;
 }
 
 function datesOverlap(s1, e1, s2, e2) {
@@ -1862,6 +1927,35 @@ function renderAdminSettings(container) {
         </select>
       </div>
       <button class="btn btn-primary" onclick="adminSetLeave()">強制設定假期</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="icon">🔀</div>期間組別調整（以天為單位）</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">指定某員工在特定日期區間內，將其假期紀錄的組別臨時改為另一組（按天計算）</div>
+      <div class="form-group">
+        <label class="form-label">員工（姓名或員編）</label>
+        <input class="form-control" id="groupDayUser" placeholder="輸入員工" oninput="adminLookupGroupDayUser()">
+        <div id="groupDayUserInfo"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">區間開始日</label>
+          <input type="date" class="form-control" id="groupDayStart">
+        </div>
+        <div class="form-group">
+          <label class="form-label">區間結束日</label>
+          <input type="date" class="form-control" id="groupDayEnd">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">此區間視為哪一組</label>
+        <select class="form-control" id="groupDayTarget">
+          <option value="A">A 組</option>
+          <option value="B">B 組</option>
+        </select>
+      </div>
+      <div class="hint" style="margin-bottom:8px">※ 此設定僅影響衝突判斷，不會永久變更組員組別</div>
+      <button class="btn btn-primary" onclick="adminApplyGroupDay()">套用期間組別</button>
+      <div id="groupDayResult" style="margin-top:8px"></div>
     </div>`;
 }
 
@@ -1873,6 +1967,67 @@ function adminLookupSetUser() {
     ? `<div class="alert alert-success">✓ ${m.name}（${m.id}）・${m.group}組</div>`
     : (q ? '<div class="alert alert-warning">找不到員工</div>' : '');
   adminSetUserId = m ? m.id : null;
+}
+
+let groupDayUserId = null;
+function adminLookupGroupDayUser() {
+  const q = document.getElementById('groupDayUser').value.trim();
+  const m = getMember(q);
+  document.getElementById('groupDayUserInfo').innerHTML = m
+    ? '<div class="alert alert-success">✓ ' + m.name + '（' + m.id + '）・' + m.group + '組</div>'
+    : (q ? '<div class="alert alert-warning">找不到員工</div>' : '');
+  groupDayUserId = m ? m.id : null;
+}
+
+function adminApplyGroupDay() {
+  if (!groupDayUserId) { showToast('請選擇員工'); return; }
+  const s = document.getElementById('groupDayStart').value;
+  const e = document.getElementById('groupDayEnd').value;
+  const targetGroup = document.getElementById('groupDayTarget').value;
+  if (!s || !e || e < s) { showToast('請填寫正確日期區間'); return; }
+
+  const m = state.members.find(x => x.id === groupDayUserId);
+  if (!m) return;
+
+  // 找出此員工在指定區間內有哪些假期紀錄與此區間重疊
+  const affected = state.records.filter(r => {
+    if (r.userId !== groupDayUserId) return false;
+    if (r.status === 'cancelled' || r.status === 'rejected') return false;
+    return datesOverlap(s, e, r.startDate, r.endDate);
+  });
+
+  if (affected.length === 0) {
+    document.getElementById('groupDayResult').innerHTML =
+      '<div class="alert alert-warning">此區間找不到該員工的假期紀錄，無可調整項目</div>';
+    return;
+  }
+
+  // 計算實際受影響工作天數
+  let totalDays = 0;
+  affected.forEach(r => {
+    // 計算交集工作日
+    const overlapStart = r.startDate > s ? r.startDate : s;
+    const overlapEnd   = r.endDate < e ? r.endDate : e;
+    totalDays += countWorkdays(overlapStart, overlapEnd);
+    // 在紀錄上附加期間組別覆蓋資訊
+    if (!r.groupDayOverrides) r.groupDayOverrides = [];
+    r.groupDayOverrides.push({
+      from: s, to: e, group: targetGroup,
+      setAt: new Date().toISOString(),
+      setBy: '管理員'
+    });
+    r.history.push({
+      time: new Date().toISOString(),
+      action: '管理員將 ' + s + ' – ' + e + ' 期間組別調整為 ' + targetGroup + ' 組'
+    });
+  });
+
+  save();
+  showToast('已套用：' + m.name + ' 在 ' + formatISO(s) + '–' + formatISO(e) + ' 視為 ' + targetGroup + ' 組');
+  document.getElementById('groupDayResult').innerHTML =
+    '<div class="alert alert-success">✅ 共影響 ' + affected.length + ' 筆假期、' + totalDays + ' 個工作日<br>' +
+    '已在相關紀錄中加註期間組別（' + targetGroup + ' 組），並記錄異動歷程。</div>';
+  renderAdminSettings(document.getElementById('adminTabContent'));
 }
 
 function adminSetLeave() {
