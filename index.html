@@ -1973,23 +1973,40 @@ function renderAdminExport(container) {
 
 function exportExcel() {
   if (typeof XLSX === 'undefined') { showToast('載入中，請稍後再試'); return; }
-  const rows = state.records.map(r => {
+  const statusLabel = {
+    approved:'已完成', pending:'待審核', swap_pending:'對調待確認',
+    overdue:'對調逾期', rejected:'已退件', modified:'已修改',
+    swap_modify_pending:'對調修改待確認', cancelled:'已取消'
+  };
+  const sorted = [...state.records].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+  const rows = sorted.map(r => {
     const m = state.members.find(x => x.id === r.userId);
     const p = r.partnerId ? state.members.find(x => x.id === r.partnerId) : null;
+    const lastAction = r.history && r.history.length ? r.history[r.history.length-1] : null;
     return {
       '員工編號': r.userId,
       '姓名': m?.name || '',
       '組別': m?.group || '',
       '類型': r.type === 'swap' ? '對調' : '一般',
+      '假期長短': r.isLong ? '長假(≥5天)' : '短假',
       '開始日': r.startDate,
       '結束日': r.endDate,
       '天數': r.days,
-      '狀態': r.status,
+      '狀態': statusLabel[r.status] || r.status,
       '對調人員': p?.name || '',
-      '申請時間': r.createdAt?.substring(0,10) || ''
+      '對調員編': p?.id || '',
+      '申請時間': formatDateTime(r.createdAt),
+      '最後異動時間': lastAction ? formatDateTime(lastAction.time) : '',
+      '最後異動內容': lastAction ? lastAction.action : ''
     };
   });
   const ws = XLSX.utils.json_to_sheet(rows);
+  // 設定欄寬
+  ws['!cols'] = [
+    {wch:10},{wch:8},{wch:6},{wch:6},{wch:10},
+    {wch:12},{wch:12},{wch:6},{wch:14},{wch:8},{wch:10},
+    {wch:18},{wch:18},{wch:20}
+  ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '特休申請');
   XLSX.writeFile(wb, '特休申請紀錄.xlsx');
@@ -2006,12 +2023,29 @@ function exportMonthly() {
     if (!months[key]) months[key] = [];
     months[key].push(r);
   });
+  const statusLabel2 = {
+    approved:'已完成', pending:'待審核', swap_pending:'對調待確認',
+    overdue:'對調逾期', rejected:'已退件', modified:'已修改',
+    swap_modify_pending:'對調修改待確認', cancelled:'已取消'
+  };
   Object.entries(months).sort().forEach(([ym, recs]) => {
-    const rows = recs.map(r => {
+    const rows = recs.sort((a,b) => a.startDate.localeCompare(b.startDate)).map(r => {
       const m = state.members.find(x => x.id === r.userId);
-      return {'姓名': m?.name||'', '組別': m?.group||'', '開始日': r.startDate, '結束日': r.endDate, '天數': r.days, '狀態': r.status};
+      const p = r.partnerId ? state.members.find(x => x.id === r.partnerId) : null;
+      return {
+        '姓名': m?.name||'',
+        '組別': m?.group||'',
+        '類型': r.type==='swap'?'對調':'一般',
+        '開始日': r.startDate,
+        '結束日': r.endDate,
+        '天數': r.days,
+        '狀態': statusLabel2[r.status] || r.status,
+        '對調人員': p?.name||'',
+        '申請時間': formatDateTime(r.createdAt)
+      };
     });
     const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:8},{wch:6},{wch:6},{wch:12},{wch:12},{wch:6},{wch:14},{wch:8},{wch:18}];
     XLSX.utils.book_append_sheet(wb, ws, ym);
   });
   XLSX.writeFile(wb, '每月特休總覽.xlsx');
