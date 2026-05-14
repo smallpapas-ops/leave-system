@@ -2,2780 +2,1544 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="特休系統">
-<meta name="theme-color" content="#2d6a4f">
-<meta name="description" content="AB 組智慧特休預約與對調管理系統">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<title>智慧特休預約系統</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>特休預約系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
-  --bg: #f5f4f0;
+  --bg: #f0f4f8;
   --surface: #ffffff;
-  --surface2: #f0ede8;
-  --border: #e0ddd8;
-  --border2: #ccc9c0;
-  --text: #1a1a18;
-  --text2: #5a5850;
-  --text3: #8a8878;
-  --accent: #2d6a4f;
-  --accent2: #40916c;
-  --accent-light: #d8f3dc;
-  --red: #c1121f;
-  --red-light: #fce4e6;
-  --amber: #b5621a;
-  --amber-light: #fff3cd;
-  --blue: #1d4e89;
-  --blue-light: #dbe9fa;
+  --surface2: #f7f9fc;
+  --border: #e2e8f0;
+  --text: #1a202c;
+  --text2: #4a5568;
+  --text3: #718096;
+  --accent: #3b6fd4;
+  --accent2: #2f5bb7;
+  --accent-light: #ebf0fb;
+  --green: #38a169;
+  --green-light: #f0fff4;
+  --red: #e53e3e;
+  --red-light: #fff5f5;
+  --orange: #dd6b20;
+  --orange-light: #fffaf0;
+  --yellow: #d69e2e;
+  --yellow-light: #fffff0;
+  --purple: #805ad5;
+  --purple-light: #faf5ff;
+  --a-color: #3b6fd4;
+  --b-color: #38a169;
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 2px 8px rgba(0,0,0,0.08);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
-  font-size: 16px;
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.16);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Noto Sans TC', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-/* Header */
-.app-header {
-  background: var(--accent);
-  color: white;
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: var(--shadow-md);
-}
-.app-header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.5px; }
-.header-sub { font-size: 11px; opacity: 0.8; }
-.admin-btn {
-  background: rgba(255,255,255,0.2);
-  border: 1px solid rgba(255,255,255,0.4);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  cursor: pointer;
-  font-family: inherit;
-}
-.admin-btn:hover { background: rgba(255,255,255,0.3); }
-
-/* Tabs */
-.tabs {
-  display: flex;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  overflow-x: auto;
-  scrollbar-width: none;
-  position: sticky;
-  top: 53px;
-  z-index: 90;
-}
-.tabs::-webkit-scrollbar { display: none; }
-.tab {
-  flex: none;
-  padding: 12px 14px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text2);
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s;
-}
-.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.tab:hover { color: var(--accent); background: var(--accent-light); }
-
-/* Content */
-.page { display: none; padding: 16px; }
-.page.active { display: block; }
-
-/* Cards */
-.card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 12px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-}
-.card-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.card-title .icon {
-  width: 28px; height: 28px;
-  background: var(--accent-light);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
-}
-
-/* Form */
-.form-group { margin-bottom: 12px; }
-.form-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text2);
-  margin-bottom: 4px;
-}
-.form-control {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-family: inherit;
-  color: var(--text);
-  background: var(--surface);
-  transition: border 0.2s;
-  appearance: none;
-}
-.form-control:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(45,106,79,0.1);
-}
-select.form-control {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%235a5850'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 28px;
-}
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-/* Buttons */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 18px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-}
-.btn-primary { background: var(--accent); color: white; width: 100%; }
-.btn-primary:hover { background: var(--accent2); }
-.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-secondary:hover { background: var(--border); }
-.btn-danger { background: var(--red); color: white; }
-.btn-danger:hover { background: #a10d18; }
-.btn-sm { padding: 5px 10px; font-size: 11px; }
-.btn-outline {
-  background: transparent;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-}
-.btn-outline:hover { background: var(--accent-light); }
-
-/* Radio toggle */
-.toggle-group {
-  display: flex;
-  background: var(--surface2);
-  border-radius: var(--radius-sm);
-  padding: 3px;
-  margin-bottom: 12px;
-}
-.toggle-opt {
-  flex: 1;
-  padding: 8px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 500;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: var(--text2);
-}
-.toggle-opt.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow); }
-
-/* Badges */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 500;
-}
-.badge-success { background: var(--accent-light); color: var(--accent); }
-.badge-warning { background: var(--amber-light); color: var(--amber); }
-.badge-danger { background: var(--red-light); color: var(--red); }
-.badge-info { background: var(--blue-light); color: var(--blue); }
-.badge-gray { background: var(--surface2); color: var(--text2); }
-
-/* Record cards */
-.record-card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  padding: 12px 14px;
-  margin-bottom: 8px;
-}
-.record-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 6px;
-}
-.record-name { font-weight: 600; font-size: 13px; }
-.record-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
-.record-dates { font-size: 12px; color: var(--text2); margin-top: 4px; }
-.record-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-
-/* Member list */
-.member-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  font-size: 13px;
-}
-.member-row:last-child { border-bottom: none; }
-.member-info { display: flex; flex-direction: column; gap: 2px; }
-.member-name { font-weight: 500; }
-.member-sub { font-size: 11px; color: var(--text3); }
-.member-leave {
-  text-align: right;
-  font-weight: 600;
-  color: var(--accent);
-  font-size: 14px;
-}
-.member-leave span { font-size: 11px; color: var(--text3); font-weight: 400; }
-
-/* Calendar */
-.cal-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.cal-nav h3 { font-size: 15px; font-weight: 700; }
-.cal-nav button {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 16px;
-}
-.cal-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
-.cal-dow {
-  text-align: center;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text3);
-  padding: 4px 2px;
-}
-.cal-day {
-  min-height: 68px;
-  border-radius: 6px;
-  padding: 3px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  position: relative;
-  cursor: pointer;
-  overflow: hidden;
-}
-.cal-day:hover { border-color: var(--accent); }
-.cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
-.cal-day.today { border-color: var(--accent); }
-.cal-day .day-num { font-size: 11px; font-weight: 500; margin-bottom: 2px; }
-.cal-day.today .day-num { color: var(--accent); font-weight: 700; }
-.cal-day.weekend .day-num { color: var(--red); }
-.cal-events { display: flex; flex-direction: column; gap: 1px; }
-.cal-event {
-  font-size: 10px;
-  padding: 1px 3px;
-  border-radius: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-.cal-event.approved { background: var(--accent-light); color: var(--accent); }
-.cal-event.pending { background: var(--amber-light); color: var(--amber); }
-
-/* Stats */
-.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px;
-  text-align: center;
-}
-.stat-num { font-size: 24px; font-weight: 700; color: var(--accent); }
-.stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
-
-/* Modal */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 200;
-  align-items: flex-end;
-  justify-content: center;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--surface);
-  border-radius: var(--radius) var(--radius) 0 0;
-  padding: 20px 16px;
-  width: 100%;
-  max-height: 85vh;
-  overflow-y: auto;
-  animation: slideUp 0.3s ease;
-}
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.modal-title {
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.modal-close {
-  width: 28px; height: 28px;
-  background: var(--surface2);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-  border: none;
-  color: var(--text2);
-}
-
-/* Alert */
-.alert {
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  margin-bottom: 10px;
-  border-left: 3px solid;
-}
-.alert-info { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
-.alert-warning { background: var(--amber-light); border-color: var(--amber); color: var(--amber); }
-.alert-danger { background: var(--red-light); border-color: var(--red); color: var(--red); }
-.alert-success { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
-
-/* Separator */
-.section-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  color: var(--text3);
-  text-transform: uppercase;
-  margin: 16px 0 8px;
-}
-
-/* Progress bar */
-.progress-bar {
-  height: 6px;
-  background: var(--surface2);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-.progress-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 3px;
-  transition: width 0.4s;
-}
-.progress-fill.warning { background: var(--amber); }
-.progress-fill.danger { background: var(--red); }
-
-/* Search */
-.search-wrap { position: relative; margin-bottom: 12px; }
-.search-input {
-  width: 100%;
-  padding: 9px 12px 9px 34px;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  font-size: 13px;
-  font-family: inherit;
-  background: var(--surface);
-  color: var(--text);
-}
-.search-input:focus { outline: none; border-color: var(--accent); }
-.search-icon {
-  position: absolute;
-  left: 11px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text3);
-  font-size: 14px;
-}
-
-/* Divider */
-.divider { height: 1px; background: var(--border); margin: 12px 0; }
-
-/* Timeline item */
-.timeline-item {
-  position: relative;
-  padding-left: 20px;
-  margin-bottom: 8px;
-  font-size: 12px;
-  color: var(--text2);
-}
-.timeline-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--border2);
-}
-
-/* Chip group */
-.chip-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.chip {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 500;
-  background: var(--surface2);
-  color: var(--text2);
-  border: 1px solid var(--border);
-  cursor: pointer;
-}
-.chip.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
-
-/* Login */
-.login-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-  min-height: 400px;
-}
-.login-icon { font-size: 48px; margin-bottom: 16px; }
-.login-wrap h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-.login-wrap p { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
-.login-form { width: 100%; max-width: 280px; }
-
-/* Tooltip hint */
-.hint { font-size: 11px; color: var(--text3); margin-top: 3px; }
-
-/* Day picker */
-.day-type-row {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-.day-type-chip {
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  background: var(--surface);
-  color: var(--text2);
-}
-.day-type-chip.selected { background: var(--accent); color: white; border-color: var(--accent); }
-
-/* Table */
-.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.data-table th {
-  background: var(--surface2);
-  padding: 8px 10px;
-  text-align: left;
-  font-weight: 600;
-  color: var(--text2);
-  font-size: 11px;
-}
-.data-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
-.data-table tr:hover td { background: var(--surface2); }
-
-/* Empty state */
-.empty-state {
-  text-align: center;
-  padding: 32px 16px;
-  color: var(--text3);
-}
-.empty-state .empty-icon { font-size: 40px; margin-bottom: 8px; }
-.empty-state p { font-size: 13px; }
-
-/* Notification */
-.toast {
-  position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1a1a18;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 24px;
-  font-size: 13px;
-  z-index: 999;
-  white-space: nowrap;
-  animation: fadeInOut 3s ease forwards;
-  pointer-events: none;
-}
-@keyframes fadeInOut {
-  0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  75% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-/* QR */
-#qrCanvas { display: block; margin: 12px auto; }
-
-/* Admin password overlay */
-#adminOverlay {
-  position: fixed;
-  inset: 0;
-  background: var(--bg);
-  z-index: 300;
-  display: none;
-}
-
-/* Swap info box */
-.swap-info {
-  background: var(--blue-light);
-  border: 1px solid var(--blue);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  font-size: 12px;
-  color: var(--blue);
-  margin-bottom: 12px;
-}
-
-/* KPI bar */
-.kpi-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 12px;
-}
-.kpi-bar-label { width: 100px; flex-shrink: 0; color: var(--text2); }
-.kpi-bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
-.kpi-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
-.kpi-bar-val { width: 36px; text-align: right; font-weight: 600; color: var(--text); flex-shrink: 0; }
-
-/* Floating bottom nav area spacer */
-body::after { content: ''; display: block; height: 16px; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+/* ─── NAV ─── */
+.app-header{background:var(--accent);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(59,111,212,0.3);}
+.app-title{font-size:16px;font-weight:700;letter-spacing:.5px;}
+.header-right{display:flex;gap:8px;align-items:center;}
+.user-btn{background:rgba(255,255,255,0.2);border:none;color:#fff;padding:6px 12px;border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit;}
+.tab-bar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:52px;z-index:99;}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab-item{padding:12px 16px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s;}
+.tab-item.active{color:var(--accent);border-bottom-color:var(--accent);}
+/* ─── PANELS ─── */
+.panel{display:none;padding:16px;max-width:960px;margin:0 auto;}
+.panel.active{display:block;}
+/* ─── CARDS ─── */
+.card{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);}
+.card-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text);}
+/* ─── FORM ─── */
+label{display:block;font-size:13px;font-weight:500;color:var(--text2);margin-bottom:4px;}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;transition:border .2s;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+.form-row{margin-bottom:12px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:500px){.form-grid{grid-template-columns:1fr;}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .2s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-success{background:var(--green);color:#fff;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-warning{background:var(--orange);color:#fff;}
+.btn-ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-full{width:100%;}
+/* ─── BADGES ─── */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-a{background:rgba(59,111,212,.12);color:var(--a-color);}
+.badge-b{background:rgba(56,161,105,.12);color:var(--b-color);}
+.badge-green{background:var(--green-light);color:var(--green);}
+.badge-red{background:var(--red-light);color:var(--red);}
+.badge-orange{background:var(--orange-light);color:var(--orange);}
+.badge-yellow{background:var(--yellow-light);color:var(--yellow);}
+.badge-purple{background:var(--purple-light);color:var(--purple);}
+.badge-gray{background:var(--surface2);color:var(--text3);}
+/* ─── MEMBER CARDS ─── */
+.member-card{background:var(--surface);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);border-left:4px solid var(--a-color);}
+.member-card.b-group{border-left-color:var(--b-color);}
+.member-name{font-size:15px;font-weight:600;}
+.member-meta{font-size:12px;color:var(--text3);margin-top:2px;}
+.member-leave{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.leave-pill{background:var(--accent-light);color:var(--accent);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media(max-width:600px){.grid-3{grid-template-columns:1fr 1fr;}.grid-2{grid-template-columns:1fr;}}
+/* ─── RECORD ITEM ─── */
+.record-item{background:var(--surface);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);position:relative;}
+.record-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.record-name{font-weight:600;font-size:14px;}
+.record-dates{font-size:13px;color:var(--text2);margin-top:4px;}
+.record-footer{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;}
+/* ─── CALENDAR ─── */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-nav{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:4px 0;}
+.cal-day{min-height:70px;background:var(--surface2);border-radius:6px;padding:4px;font-size:12px;position:relative;}
+.cal-day.today{background:var(--accent-light);border:1px solid var(--accent);}
+.cal-day.other-month{opacity:.4;}
+.cal-day .day-num{font-weight:600;color:var(--text2);}
+.cal-day.weekend .day-num{color:var(--red);}
+.cal-events{margin-top:2px;display:flex;flex-direction:column;gap:1px;}
+.cal-event{font-size:10px;padding:1px 4px;border-radius:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cal-event.a-ev{background:rgba(59,111,212,.15);color:var(--a-color);}
+.cal-event.b-ev{background:rgba(56,161,105,.15);color:var(--b-color);}
+/* ─── MODAL ─── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.overlay.active{display:flex;}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease;}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);}
+/* ─── KPI ─── */
+.kpi-card{background:var(--surface);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow);}
+.kpi-val{font-size:28px;font-weight:700;color:var(--accent);}
+.kpi-label{font-size:12px;color:var(--text3);margin-top:4px;}
+/* ─── ALERT ─── */
+.alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px;}
+.alert-warn{background:var(--orange-light);color:var(--orange);border-left:3px solid var(--orange);}
+.alert-err{background:var(--red-light);color:var(--red);border-left:3px solid var(--red);}
+.alert-ok{background:var(--green-light);color:var(--green);border-left:3px solid var(--green);}
+.alert-info{background:var(--accent-light);color:var(--accent);border-left:3px solid var(--accent);}
+/* ─── TOGGLE ─── */
+.type-toggle{display:flex;background:var(--surface2);border-radius:var(--radius-sm);padding:4px;gap:4px;margin-bottom:12px;}
+.type-btn{flex:1;padding:8px;text-align:center;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text3);transition:all .2s;}
+.type-btn.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow);}
+/* ─── SECTION HEAD ─── */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.sec-title{font-size:15px;font-weight:700;color:var(--text);}
+/* ─── LOGIN ─── */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#3b6fd4,#805ad5);}
+.login-card{background:#fff;border-radius:20px;padding:32px 28px;width:90%;max-width:360px;box-shadow:var(--shadow-lg);}
+.login-title{text-align:center;font-size:20px;font-weight:700;margin-bottom:24px;}
+/* ─── FILTER BAR ─── */
+.filter-bar{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;}
+.filter-bar::-webkit-scrollbar{display:none;}
+.filter-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .2s;}
+.filter-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+/* ─── DRAG HANDLE ─── */
+.drag-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
+/* ─── LEAVE BAR ─── */
+.leave-bar-wrap{background:var(--surface2);border-radius:8px;overflow:hidden;height:8px;margin-top:4px;}
+.leave-bar{height:100%;background:var(--accent);border-radius:8px;transition:width .5s;}
+/* ─── STEP INDICATOR ─── */
+.steps{display:flex;align-items:center;gap:4px;margin-bottom:16px;}
+.step{flex:1;height:4px;border-radius:2px;background:var(--border);}
+.step.done{background:var(--accent);}
+/* ─── CONFLICT ─── */
+.conflict-box{background:var(--red-light);border:1px solid #fed7d7;border-radius:var(--radius-sm);padding:12px;margin:10px 0;}
+.suggest-box{background:var(--green-light);border:1px solid #c6f6d5;border-radius:var(--radius-sm);padding:12px;margin:10px 0;}
+/* misc */
+.divider{height:1px;background:var(--border);margin:12px 0;}
+.text-sm{font-size:12px;color:var(--text3);}
+.text-muted{color:var(--text3);}
+.mt-8{margin-top:8px;}
+.mt-12{margin-top:12px;}
+.flex{display:flex;}
+.items-center{align-items:center;}
+.gap-8{gap:8px;}
+.justify-between{justify-content:space-between;}
+.w-full{width:100%;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--surface2);padding:8px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);}
+td{padding:8px 10px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+.qr-wrap{text-align:center;padding:20px;}
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.stat-row:last-child{border-bottom:none;}
 </style>
+<!-- Firebase Compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBfktGpdLguFvEcncQXTrf6xf5oDFf08oY",
+    authDomain: "leave-system-2026-5a36f.firebaseapp.com",
+    projectId: "leave-system-2026-5a36f",
+    storageBucket: "leave-system-2026-5a36f.firebasestorage.app",
+    messagingSenderId: "698441014212",
+    appId: "1:698441014212:web:7bf9cc77d6989c820f2291"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const _db = firebase.firestore();
+
+  // ── FIX 4: 儲存到 Firebase 時，排除 calYear/calMonth（這是本機 UI 狀態，不應同步）
+  window._fbSave = async function(stateObj) {
+    try {
+      const toSave = {
+        applications: stateObj.applications,
+        members: stateObj.members,
+        adminPassword: stateObj.adminPassword
+        // 故意不存 calYear / calMonth / currentUserId
+      };
+      await _db.collection('state').doc('main').set({ data: JSON.stringify(toSave) });
+    } catch(e) { console.error('Firebase save error', e); }
+  };
+
+  window._fbLoad = async function() {
+    try {
+      const snap = await _db.collection('state').doc('main').get();
+      if(snap.exists) return JSON.parse(snap.data().data);
+    } catch(e) { console.error('Firebase load error', e); }
+    return null;
+  };
+
+  window._fbListen = function(callback) {
+    return _db.collection('state').doc('main').onSnapshot((snap) => {
+      if(snap.exists) {
+        try { callback(JSON.parse(snap.data().data)); } catch(e) {}
+      }
+    });
+  };
+
+  window._fbReady = true;
+</script>
 </head>
 <body>
 
-<div class="app-header">
-  <div>
-    <div class="app-header h1" style="font-size:17px;font-weight:700;letter-spacing:.5px">🌿 智慧特休預約系統</div>
-    <div class="header-sub" id="todayLabel"></div>
-  </div>
-  <div style="display:flex;align-items:center;gap:8px">
-    <span id="syncStatus" style="font-size:11px;opacity:0.85;white-space:nowrap;cursor:pointer" onclick="showSyncDebug()">⏳ 連線中...</span>
-    <button class="admin-btn" onclick="openAdmin()">🔐 主管</button>
-  </div>
-</div>
-
-<div class="tabs" id="mainTabs">
-  <div class="tab active" onclick="showTab(0)">📝 申請特休</div>
-  <div class="tab" onclick="showTab(1)">📋 申請紀錄</div>
-  <div class="tab" onclick="showTab(2)">👥 AB 分組</div>
-  <div class="tab" onclick="showTab(3)">📅 特休總覽</div>
-</div>
-
-<!-- ==================== TAB 0: 申請特休 ==================== -->
-<div class="page active" id="page0">
-  <div class="card">
-    <div class="card-title"><div class="icon">👤</div>申請人資訊</div>
-    <div class="form-group">
-      <label class="form-label">員工姓名或員工編號</label>
-      <input class="form-control" id="applyUser" placeholder="輸入姓名或員編" oninput="lookupUser('applyUser','applyUserInfo')">
+<!-- ══════ MAIN APP ══════ -->
+<div id="app">
+  <header class="app-header">
+    <div class="app-title">🌿 特休預約系統</div>
+    <div class="header-right">
+      <span id="currentUserBadge" style="font-size:12px;opacity:.8;"></span>
+      <button class="user-btn" onclick="switchUser()">切換用戶</button>
     </div>
-    <div id="applyUserInfo"></div>
+  </header>
+
+  <div class="tab-bar" id="tabBar">
+    <div class="tab-item active" data-tab="apply" onclick="switchTab('apply',this)">📋 申請特休</div>
+    <div class="tab-item" data-tab="records" onclick="switchTab('records',this)">📁 申請紀錄</div>
+    <div class="tab-item" data-tab="groups" onclick="switchTab('groups',this)">👥 AB分組</div>
+    <div class="tab-item" data-tab="calendar" onclick="switchTab('calendar',this)">📅 月曆總覽</div>
+    <div class="tab-item" data-tab="admin" onclick="openAdmin()">🔐 主管</div>
   </div>
 
-  <div class="toggle-group">
-    <div class="toggle-opt active" id="typeGeneral" onclick="switchApplyType('general')">一般申請</div>
-    <div class="toggle-opt" id="typeSwap" onclick="switchApplyType('swap')">對調申請</div>
-  </div>
-
-  <!-- General Apply -->
-  <div id="generalApplySection">
+  <!-- ══ TAB 1: APPLY ══ -->
+  <div class="panel active" id="tab-apply">
     <div class="card">
-      <div class="card-title"><div class="icon">📆</div>假期資訊</div>
-      <div class="form-group">
-        <label class="form-label">假期類型</label>
-        <div class="day-type-row">
-          <div class="day-type-chip selected" id="shortLeaveChip" onclick="selectLeaveLength('short')">短假 (1–4天)</div>
-          <div class="day-type-chip" id="longLeaveChip" onclick="selectLeaveLength('long')">長假 (5–15天)</div>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">開始日期</label>
-          <input type="date" class="form-control" id="genStartDate" onchange="calcGenDays()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">結束日期</label>
-          <input type="date" class="form-control" id="genEndDate" onchange="calcGenDays()">
-        </div>
-      </div>
-      <div id="genDayInfo" class="hint"></div>
-      <div id="genBlockInfo"></div>
-    </div>
-    <div class="card">
-      <div class="card-title"><div class="icon">📝</div>備註 (選填)</div>
-      <textarea class="form-control" id="genNote" rows="2" placeholder="請假原因..."></textarea>
-    </div>
-    <button class="btn btn-primary" onclick="submitGeneral()">送出申請 →</button>
-  </div>
-
-  <!-- Swap Apply -->
-  <div id="swapApplySection" style="display:none">
-    <div class="swap-info">
-      💡 對調假期必須在申請日前 4 個月內進行。例如：想申請 2026/9 的假 → 對調假期最早從 2026/5/1 開始。
-    </div>
-    <div class="card">
-      <div class="card-title"><div class="icon">🔄</div>對調人員</div>
-      <div class="form-group">
-        <label class="form-label">選擇另一組對調人員</label>
-        <input class="form-control" id="swapPartner" placeholder="輸入對調人員姓名或員編" oninput="lookupSwapPartner()">
-      </div>
-      <div id="swapPartnerInfo"></div>
-    </div>
-    <div class="card">
-      <div class="card-title"><div class="icon">📅</div>對調假期日期</div>
-      <div id="swapDateHint" class="hint" style="margin-bottom:8px"></div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">對調開始日</label>
-          <input type="date" class="form-control" id="swapTheirStart" onchange="calcSwapDays()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">對調結束日</label>
-          <input type="date" class="form-control" id="swapTheirEnd" onchange="calcSwapDays()">
-        </div>
-      </div>
-      <div id="swapTheirDayInfo" class="hint"></div>
-      <div id="swapBlockInfo"></div>
-    </div>
-    <button class="btn btn-primary" onclick="submitSwap()">送出對調申請 →</button>
-  </div>
-</div>
-
-<!-- ==================== TAB 1: 申請紀錄 ==================== -->
-<div class="page" id="page1">
-  <div class="search-wrap">
-    <span class="search-icon">🔍</span>
-    <input class="search-input" id="recordSearch" placeholder="搜尋姓名、員編..." oninput="renderRecords()">
-  </div>
-  <div class="chip-group" id="recordFilter">
-    <div class="chip active" onclick="setFilter('all',this)">全部</div>
-    <div class="chip" onclick="setFilter('approved',this)">已完成</div>
-    <div class="chip" onclick="setFilter('pending',this)">待確認</div>
-    <div class="chip" onclick="setFilter('swap_pending',this)">對調待確認</div>
-    <div class="chip" onclick="setFilter('overdue',this)">對調逾期</div>
-  </div>
-  <div id="recordList"></div>
-</div>
-
-<!-- ==================== TAB 2: AB 分組 ==================== -->
-<div class="page" id="page2">
-  <div class="toggle-group">
-    <div class="toggle-opt active" id="grpA" onclick="switchGroup('A')">A 組（<span id="countA">0</span>人）</div>
-    <div class="toggle-opt" id="grpB" onclick="switchGroup('B')">B 組（<span id="countB">0</span>人）</div>
-  </div>
-  <div class="card" id="groupListCard">
-    <div id="groupMemberList"></div>
-  </div>
-</div>
-
-<!-- ==================== TAB 3: 特休總覽 ==================== -->
-<div class="page" id="page3">
-  <div class="cal-nav">
-    <button onclick="calPrev()">‹</button>
-    <h3 id="calTitle"></h3>
-    <button onclick="calNext()">›</button>
-  </div>
-  <div class="card" style="padding:8px">
-    <div class="cal-grid" id="calGrid"></div>
-  </div>
-  <div id="calLegend" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:11px">
-    <span><span class="cal-event approved" style="display:inline-block;width:10px;height:10px;border-radius:2px"></span> 已完成</span>
-    <span><span class="cal-event pending" style="display:inline-block;width:10px;height:10px;border-radius:2px"></span> 待確認</span>
-  </div>
-  <div id="calDayDetail" class="card" style="display:none;margin-top:8px"></div>
-</div>
-
-<!-- ==================== ADMIN OVERLAY ==================== -->
-<div id="adminOverlay">
-  <div class="app-header">
-    <div>
-      <div style="font-size:17px;font-weight:700">🔐 主管後台</div>
-      <div class="header-sub">管理員模式</div>
-    </div>
-    <button class="admin-btn" onclick="closeAdmin()">✕ 退出</button>
-  </div>
-  <div class="tabs">
-    <div class="tab active" onclick="showAdminTab(0)">審核</div>
-    <div class="tab" onclick="showAdminTab(1)">設定</div>
-    <div class="tab" onclick="showAdminTab(2)">統計/KPI</div>
-    <div class="tab" onclick="showAdminTab(3)">匯出</div>
-    <div class="tab" onclick="showAdminTab(4)">成員管理</div>
-  </div>
-
-  <div style="padding:16px;overflow-y:auto;height:calc(100vh - 100px)">
-    <!-- Admin tab 0: Review -->
-    <div id="adminPage0">
-      <div class="section-label">待審核申請</div>
-      <div id="adminPendingList"></div>
-      <div class="section-label" style="margin-top:16px">所有申請</div>
-      <div id="adminAllList"></div>
-    </div>
-
-    <!-- Admin tab 1: Settings -->
-    <div id="adminPage1" style="display:none">
-      <div class="card">
-        <div class="card-title"><div class="icon">🎨</div>主題設定</div>
-        <div class="form-group">
-          <label class="form-label">主色調</label>
-          <div class="chip-group">
-            <div class="chip active" onclick="setTheme('#2d6a4f','#40916c','#d8f3dc',this)">🌿 森林綠</div>
-            <div class="chip" onclick="setTheme('#1d4e89','#2563ab','#dbe9fa',this)">🌊 海洋藍</div>
-            <div class="chip" onclick="setTheme('#6b21a8','#7c3aed','#ede9fe',this)">🌸 紫羅蘭</div>
-            <div class="chip" onclick="setTheme('#9a3412','#b45309','#fef3c7',this)">🍂 秋葉橙</div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title"><div class="icon">⚙️</div>直接設定假期</div>
-        <div class="form-group">
-          <label class="form-label">員工</label>
-          <input class="form-control" id="adminSetUser" placeholder="姓名或員編" oninput="lookupUser('adminSetUser','adminSetUserInfo')">
-          <div id="adminSetUserInfo"></div>
-        </div>
+      <div class="card-title">👤 目前用戶</div>
+      <div id="userSelector">
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">開始日</label>
-            <input type="date" class="form-control" id="adminSetStart">
-          </div>
-          <div class="form-group">
-            <label class="form-label">結束日</label>
-            <input type="date" class="form-control" id="adminSetEnd">
-          </div>
+          <label>輸入姓名或員工編號</label>
+          <input type="text" id="userInput" placeholder="例：李靜怡 或 10361" oninput="searchUser(this.value)">
         </div>
-        <div class="form-group">
-          <label class="form-label">允許超過同假期人數限制</label>
-          <select class="form-control" id="adminForceAllow">
-            <option value="0">否（最多1人長假）</option>
-            <option value="1">允許最多2人</option>
-            <option value="2">允許最多3人</option>
-            <option value="3">允許最多4人</option>
+        <div id="userSuggestions" style="margin-top:4px;"></div>
+        <div id="selectedUserInfo" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <div class="card" id="applyFormCard" style="display:none;">
+      <div class="card-title">新增特休申請</div>
+      <div class="type-toggle">
+        <div class="type-btn active" onclick="setApplyType('normal',this)">一般申請</div>
+        <div class="type-btn" onclick="setApplyType('swap',this)">對調申請</div>
+      </div>
+
+      <!-- Normal form -->
+      <div id="normalForm">
+        <div class="form-row">
+          <label>假期類型</label>
+          <select id="normalType">
+            <option value="short">短假 (1–4天)</option>
+            <option value="long">長假 (5–15天)</option>
           </select>
         </div>
-        <button class="btn btn-primary" onclick="adminSetLeave()">強制設定假期</button>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>開始日期</label>
+            <input type="date" id="normalStart" onchange="calcNormalDays()">
+          </div>
+          <div class="form-row">
+            <label>結束日期</label>
+            <input type="date" id="normalEnd" onchange="calcNormalDays()">
+          </div>
+        </div>
+        <div id="normalDayCount" class="text-sm mt-8"></div>
+        <div id="normalConflict" class="mt-8"></div>
+        <div id="normalLeaveInfo" class="mt-8"></div>
+        <button id="submitNormalBtn" class="btn btn-primary btn-full mt-12" onclick="submitNormal()">📤 送出申請</button>
       </div>
-    </div>
 
-    <!-- Admin tab 2: KPI -->
-    <div id="adminPage2" style="display:none">
-      <div class="stat-grid" id="kpiStats"></div>
-      <div class="card">
-        <div class="card-title"><div class="icon">📊</div>KPI 指標</div>
-        <div id="kpiBars"></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><div class="icon">👤</div>個人特休申請率</div>
-        <div id="personalKpi"></div>
-      </div>
-    </div>
-
-    <!-- Admin tab 3: Export -->
-    <div id="adminPage3" style="display:none">
-      <div class="card">
-        <div class="card-title"><div class="icon">📤</div>匯出功能</div>
-        <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" onclick="exportExcel()">📊 匯出 Excel（所有申請）</button>
-        <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" onclick="exportMonthly()">📅 匯出每月特休總覽</button>
-        <button class="btn btn-secondary" style="width:100%" onclick="showQR()">📱 QR Code 掃描</button>
-      </div>
-      <div class="card" id="qrCard" style="display:none;text-align:center">
-        <canvas id="qrCanvas" width="200" height="200"></canvas>
-        <p class="hint" style="margin-top:8px">掃描以在其他裝置開啟系統</p>
-      </div>
-    </div>
-
-    <!-- Admin tab 4: Members -->
-    <div id="adminPage4" style="display:none">
-      <div class="card">
-        <div class="card-title"><div class="icon">➕</div>新增組員</div>
+      <!-- Swap form -->
+      <div id="swapForm" style="display:none;">
+        <div class="alert alert-info">對調申請：選另一組人員，填寫您的假期日期（5–15天）</div>
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">員工編號</label>
-            <input class="form-control" id="newEmpId" placeholder="例：17500">
-          </div>
-          <div class="form-group">
-            <label class="form-label">姓名</label>
-            <input class="form-control" id="newEmpName" placeholder="姓名">
+          <label>對調人員員工編號（另一組）</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="swapPartnerInput" placeholder="輸入員工編號" maxlength="10" style="flex:1;" oninput="lookupSwapPartner(this.value)">
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">到職日</label>
-            <input type="date" class="form-control" id="newEmpJoin">
+        <div id="selectedPartnerInfo" class="mt-8"></div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>假期開始日</label>
+            <input type="date" id="swapMyStart" onchange="calcSwapDays()">
           </div>
-          <div class="form-group">
-            <label class="form-label">組別</label>
-            <select class="form-control" id="newEmpGroup">
-              <option value="A">A 組</option>
-              <option value="B">B 組</option>
-            </select>
+          <div class="form-row">
+            <label>假期結束日</label>
+            <input type="date" id="swapMyEnd" onchange="calcSwapDays()">
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">手動特休天數（空白=自動計算）</label>
-          <input class="form-control" id="newEmpLeave" placeholder="留空自動計算">
-        </div>
-        <button class="btn btn-primary" onclick="addMember()">新增組員</button>
+        <div id="swapDayCount" class="text-sm mt-8"></div>
+        <div id="swapConflict" class="mt-8"></div>
+        <button class="btn btn-primary btn-full mt-12" onclick="submitSwap()">📤 送出對調申請</button>
       </div>
-      <div class="section-label">現有組員管理</div>
-      <div id="adminMemberList"></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 2: RECORDS ══ -->
+  <div class="panel" id="tab-records">
+    <div class="filter-bar" id="recordFilter">
+      <div class="filter-chip active" onclick="filterRecords('all',this)">全部</div>
+      <div class="filter-chip" onclick="filterRecords('pending',this)">待審核</div>
+      <div class="filter-chip" onclick="filterRecords('done',this)">已完成</div>
+      <div class="filter-chip" onclick="filterRecords('swap_pending',this)">對調待確認</div>
+      <div class="filter-chip" onclick="filterRecords('swap_expired',this)">對調逾期</div>
+      <div class="filter-chip" onclick="filterRecords('rejected',this)">已退件</div>
+    </div>
+    <div id="recordsList"></div>
+  </div>
+
+  <!-- ══ TAB 3: GROUPS ══ -->
+  <div class="panel" id="tab-groups">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div class="sec-head">
+          <div class="sec-title">A 組成員</div>
+          <span class="badge badge-a">A</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;" id="groupA"></div>
+      </div>
+      <div>
+        <div class="sec-head">
+          <div class="sec-title">B 組成員</div>
+          <span class="badge badge-b">B</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;" id="groupB"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 4: CALENDAR ══ -->
+  <div class="panel" id="tab-calendar">
+    <div class="card">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="calPrev()">‹</button>
+        <div id="calTitle" style="font-weight:700;font-size:16px;"></div>
+        <button class="cal-nav" onclick="calNext()">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" id="calMonthSummaryTitle">本月特休總覽</div>
+      <div id="calMonthSummary"></div>
     </div>
   </div>
 </div>
 
-<!-- Modals -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal" id="modalContent"></div>
+<!-- ══════ ADMIN LOGIN ══════ -->
+<div id="adminLoginWrap" style="display:none;" class="login-wrap">
+  <div class="login-card">
+    <div class="login-title">🔐 主管登入</div>
+    <div class="form-row">
+      <label>管理員密碼</label>
+      <input type="password" id="adminPwInput" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')checkAdminPw()">
+    </div>
+    <div id="adminPwErr" class="alert alert-err" style="display:none;">密碼錯誤</div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn btn-ghost flex-1" onclick="closeAdminLogin()">取消</button>
+      <button class="btn btn-primary flex-1" onclick="checkAdminPw()">登入</button>
+    </div>
+  </div>
 </div>
 
-<!-- Toast -->
-<div class="toast" id="toast" style="display:none"></div>
+<!-- ══════ ADMIN PANEL ══════ -->
+<div id="adminPanel" style="display:none;">
+  <header class="app-header" style="background:#1a202c;">
+    <div class="app-title">🔐 主管管理介面</div>
+    <button class="user-btn" onclick="closeAdmin()">← 返回</button>
+  </header>
+  <div style="max-width:960px;margin:0 auto;">
+    <div class="tab-bar" id="adminTabBar">
+      <div class="tab-item active" data-tab="a-overview" onclick="switchAdminTab('a-overview',this)">📊 總覽</div>
+      <div class="tab-item" data-tab="a-pending" onclick="switchAdminTab('a-pending',this)">⏳ 待審核</div>
+      <div class="tab-item" data-tab="a-members" onclick="switchAdminTab('a-members',this)">👥 組員管理</div>
+      <div class="tab-item" data-tab="a-kpi" onclick="switchAdminTab('a-kpi',this)">📈 KPI</div>
+      <div class="tab-item" data-tab="a-export" onclick="switchAdminTab('a-export',this)">📤 匯出</div>
+      <div class="tab-item" data-tab="a-settings" onclick="switchAdminTab('a-settings',this)">⚙️ 設定</div>
+    </div>
+
+    <div class="panel active" id="atab-a-overview">
+      <div class="grid-3" id="adminKpiCards" style="margin-bottom:16px;"></div>
+      <div class="card">
+        <div class="card-title">所有申請紀錄</div>
+        <div class="filter-bar" id="adminRecordFilter">
+          <div class="filter-chip active" onclick="filterAdminRecords('all',this)">全部</div>
+          <div class="filter-chip" onclick="filterAdminRecords('pending',this)">待審核</div>
+          <div class="filter-chip" onclick="filterAdminRecords('done',this)">已完成</div>
+          <div class="filter-chip" onclick="filterAdminRecords('rejected',this)">已退件</div>
+        </div>
+        <div id="adminRecordsList"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="atab-a-pending">
+      <div class="card">
+        <div class="card-title">⏳ 待主管核准</div>
+        <div id="adminPendingList"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="atab-a-members">
+      <div class="card">
+        <div class="card-title">組員管理</div>
+        <button class="btn btn-primary btn-sm" onclick="openAddMemberModal()" style="margin-bottom:12px;">+ 新增組員</button>
+        <div id="adminMemberList"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="atab-a-kpi">
+      <div id="kpiPanel"></div>
+    </div>
+
+    <div class="panel" id="atab-a-export">
+      <div class="card">
+        <div class="card-title">📤 資料匯出</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button class="btn btn-primary" onclick="exportExcel()">📊 匯出 Excel（全部紀錄）</button>
+          <button class="btn btn-success" onclick="exportCalendar()">📅 匯出每月特休總覽</button>
+          <button class="btn btn-ghost" onclick="showQR()">📱 QR Code 掃描連結</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="atab-a-settings">
+      <div class="card">
+        <div class="card-title">🔑 變更管理員密碼</div>
+        <div class="form-row"><label>目前密碼</label><input type="password" id="pwCurrent" placeholder="輸入目前密碼"></div>
+        <div class="form-row"><label>新密碼</label><input type="password" id="pwNew" placeholder="輸入新密碼（至少4位）"></div>
+        <div class="form-row"><label>確認新密碼</label><input type="password" id="pwConfirm" placeholder="再次輸入新密碼"></div>
+        <div id="pwMsg" style="margin:8px 0;"></div>
+        <button class="btn btn-primary btn-full" onclick="changeAdminPassword()">🔒 確認變更密碼</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ USER SWITCH MODAL ══════ -->
+<div class="overlay" id="userSwitchOverlay">
+  <div class="modal">
+    <div class="drag-handle"></div>
+    <div class="modal-title">切換使用者 <button class="modal-close" onclick="closeOverlay('userSwitchOverlay')">✕</button></div>
+    <input type="text" id="switchSearch" placeholder="搜尋姓名或員編" oninput="renderSwitchList(this.value)" style="margin-bottom:10px;">
+    <div id="switchList" style="max-height:60vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- ══════ APPROVE MODAL ══════ -->
+<div class="overlay" id="approveOverlay">
+  <div class="modal">
+    <div class="drag-handle"></div>
+    <div class="modal-title">主管審核 <button class="modal-close" onclick="closeOverlay('approveOverlay')">✕</button></div>
+    <div id="approveContent"></div>
+  </div>
+</div>
+
+<!-- ══════ ADMIN EDIT MODAL ══════ -->
+<div class="overlay" id="adminEditOverlay">
+  <div class="modal">
+    <div class="drag-handle"></div>
+    <div class="modal-title">✏️ 修改申請 <button class="modal-close" onclick="closeOverlay('adminEditOverlay')">✕</button></div>
+    <div id="adminEditContent"></div>
+  </div>
+</div>
+
+<!-- ══════ ADD MEMBER MODAL ══════ -->
+<div class="overlay" id="addMemberOverlay">
+  <div class="modal">
+    <div class="drag-handle"></div>
+    <div class="modal-title">新增組員 <button class="modal-close" onclick="closeOverlay('addMemberOverlay')">✕</button></div>
+    <div class="form-row"><label>員工編號</label><input type="text" id="newEmpId"></div>
+    <div class="form-row"><label>姓名</label><input type="text" id="newName"></div>
+    <div class="form-row"><label>到職日</label><input type="date" id="newJoinDate"></div>
+    <div class="form-row"><label>組別</label>
+      <select id="newGroup"><option value="A">A組</option><option value="B">B組</option></select>
+    </div>
+    <div class="form-row"><label>特休天數（選填，留空自動計算）</label><input type="number" id="newLeave" placeholder="自動計算"></div>
+    <button class="btn btn-primary btn-full mt-12" onclick="addMember()">確認新增</button>
+  </div>
+</div>
+
+<!-- ══════ EDIT MEMBER MODAL ══════ -->
+<div class="overlay" id="editMemberOverlay">
+  <div class="modal">
+    <div class="drag-handle"></div>
+    <div class="modal-title">修改組員 <button class="modal-close" onclick="closeOverlay('editMemberOverlay')">✕</button></div>
+    <div id="editMemberContent"></div>
+  </div>
+</div>
+
+<!-- ══════ QR MODAL ══════ -->
+<div class="overlay" id="qrOverlay">
+  <div class="modal">
+    <div class="drag-handle"></div>
+    <div class="modal-title">📱 QR Code <button class="modal-close" onclick="closeOverlay('qrOverlay')">✕</button></div>
+    <div class="qr-wrap" id="qrContent"></div>
+  </div>
+</div>
 
 <script>
-// ==================== DATA ====================
-const TAIWAN_HOLIDAYS_2025_2026 = [
-  '2025-01-01','2025-01-27','2025-01-28','2025-01-29','2025-01-30','2025-01-31',
-  '2025-02-28','2025-04-03','2025-04-04','2025-04-05','2025-05-01','2025-06-07',
-  '2025-09-01','2025-10-10',
-  '2026-01-01','2026-01-26','2026-01-27','2026-01-28','2026-01-29','2026-01-30',
-  '2026-02-28','2026-04-03','2026-04-04','2026-04-05','2026-05-01','2026-05-25',
-  '2026-09-21','2026-10-09','2026-10-10'
+// ══════════════════════════════════════════
+// DATA BOOTSTRAP
+// ══════════════════════════════════════════
+const RAW_A = [
+  {id:'10361',name:'李靜怡',join:'1997/8/16',group:'A'},
+  {id:'10367',name:'張瑋恩',join:'1997/8/16',group:'A'},
+  {id:'10740',name:'李佳容',join:'1998/4/2',group:'A'},
+  {id:'11598',name:'羅秀如',join:'2001/4/18',group:'A'},
+  {id:'12847',name:'郭妍伶',join:'2007/7/2',group:'A'},
+  {id:'14040',name:'黃怡婷',join:'2013/5/21',group:'A'},
+  {id:'14055',name:'洪怡婷',join:'2013/6/17',group:'A'},
+  {id:'14190',name:'楊衣甄',join:'2013/11/18',group:'A'},
+  {id:'14444',name:'李宜鵑',join:'2014/11/17',group:'A'},
+  {id:'15068',name:'高靖緹',join:'2017/8/7',group:'A'},
+  {id:'15268',name:'卓湘晴',join:'2018/7/2',group:'A'},
+  {id:'14958',name:'林昕澄',join:'2017/3/20',group:'A'},
+  {id:'15349',name:'黃品喆',join:'2018/9/3',group:'A'},
+  {id:'15508',name:'徐禾沐',join:'2019/6/3',group:'A'},
+  {id:'15664',name:'陳金燕',join:'2019/11/18',group:'A'},
+  {id:'15813',name:'曾雅筠',join:'2020/8/17',group:'A'},
+  {id:'16016',name:'林峙廷',join:'2021/8/16',group:'A'},
+  {id:'16601',name:'吳婉菁',join:'2023/9/4',group:'A'},
+  {id:'16704',name:'江嘉琪',join:'2024/1/2',group:'A'},
+  {id:'16900',name:'李宜諮',join:'2024/8/5',group:'A'},
+  {id:'16926',name:'何尚謙',join:'2024/8/19',group:'A'},
+  {id:'16947',name:'簡晏欣',join:'2024/9/2',group:'A'},
+  {id:'17149',name:'余宗芸',join:'2025/4/7',group:'A'},
+  {id:'16949',name:'陳筠心',join:'2024/9/2',group:'A'},
+  {id:'16565',name:'黃予婕',join:'2023/8/7',group:'A'},
+];
+const RAW_B = [
+  {id:'10746',name:'王玉仙',join:'1998/4/13',group:'B'},
+  {id:'10922',name:'陳玉茹',join:'1998/9/1',group:'B'},
+  {id:'11468',name:'盧貞君',join:'2000/7/3',group:'B'},
+  {id:'12295',name:'林奕辰',join:'2004/10/21',group:'B'},
+  {id:'12483',name:'林靜子',join:'2005/9/2',group:'B'},
+  {id:'13288',name:'王嘉羚',join:'2010/1/4',group:'B'},
+  {id:'13565',name:'程郁淳',join:'2011/6/16',group:'B'},
+  {id:'14492',name:'謝佩芳',join:'2015/3/23',group:'B'},
+  {id:'14536',name:'張佩琪',join:'2015/5/25',group:'B'},
+  {id:'14635',name:'汪瑄柔',join:'2015/8/17',group:'B'},
+  {id:'15321',name:'陳柏宇',join:'2018/8/13',group:'B'},
+  {id:'15423',name:'周芳怡',join:'2018/12/3',group:'B'},
+  {id:'15544',name:'黃淑嬅',join:'2019/8/5',group:'B'},
+  {id:'15577',name:'鄒芮宸',join:'2019/8/19',group:'B'},
+  {id:'15783',name:'蘇奕臻',join:'2020/7/13',group:'B'},
+  {id:'16304',name:'王婷玉',join:'2022/8/22',group:'B'},
+  {id:'16343',name:'黃玉秀',join:'2022/9/19',group:'B'},
+  {id:'16360',name:'辜嬿潔',join:'2022/10/17',group:'B'},
+  {id:'16587',name:'黃沂晨',join:'2023/8/21',group:'B'},
+  {id:'16650',name:'劉祐呈',join:'2023/10/16',group:'B'},
+  {id:'16946',name:'陳明瑄',join:'2024/9/2',group:'B'},
+  {id:'17073',name:'張芸甄',join:'2024/12/23',group:'B'},
+  {id:'16948',name:'黃佩琪',join:'2024/9/2',group:'B'},
+  {id:'17212',name:'陳玥汝',join:'2025/7/21',group:'B'},
+  {id:'17307',name:'蕭睬容',join:'2025/10/7',group:'B'},
+  {id:'17223',name:'鄒昀珊',join:'2025/8/11',group:'B'},
 ];
 
-const DEFAULT_MEMBERS = [
-  // A group
-  {id:'10361',name:'李靜怡',join:'1997-08-16',group:'A'},
-  {id:'10367',name:'張瑋恩',join:'1997-08-16',group:'A'},
-  {id:'10740',name:'李佳容',join:'1998-04-02',group:'A'},
-  {id:'11598',name:'羅秀如',join:'2001-04-18',group:'A'},
-  {id:'12847',name:'郭妍伶',join:'2007-07-02',group:'A'},
-  {id:'14040',name:'黃怡婷',join:'2013-05-21',group:'A'},
-  {id:'14055',name:'洪怡婷',join:'2013-06-17',group:'A'},
-  {id:'14190',name:'楊衣甄',join:'2013-11-18',group:'A'},
-  {id:'14444',name:'李宜鵑',join:'2014-11-17',group:'A'},
-  {id:'15068',name:'高靖緹',join:'2017-08-07',group:'A'},
-  {id:'15268',name:'卓湘晴',join:'2018-07-02',group:'A'},
-  {id:'15321',name:'陳柏宇',join:'2018-08-13',group:'A'},
-  {id:'15349',name:'黃品喆',join:'2018-09-03',group:'A'},
-  {id:'15508',name:'徐禾沐',join:'2019-06-03',group:'A'},
-  {id:'15664',name:'陳金燕',join:'2019-11-18',group:'A'},
-  {id:'15813',name:'曾雅筠',join:'2020-08-17',group:'A'},
-  {id:'16016',name:'林峙廷',join:'2021-08-16',group:'A'},
-  {id:'16601',name:'吳婉菁',join:'2023-09-04',group:'A'},
-  {id:'16704',name:'江嘉琪',join:'2024-01-02',group:'A'},
-  {id:'16900',name:'李宜諮',join:'2024-08-05',group:'A'},
-  {id:'16926',name:'何尚謙',join:'2024-08-19',group:'A'},
-  {id:'16947',name:'簡晏欣',join:'2024-09-02',group:'A'},
-  {id:'16948',name:'黃佩琪',join:'2024-09-02',group:'A'},
-  {id:'17073',name:'張芸甄',join:'2024-12-23',group:'A'},
-  {id:'16565',name:'黃予婕',join:'2023-08-07',group:'A'},
-  // B group
-  {id:'10746',name:'王玉仙',join:'1998-04-13',group:'B'},
-  {id:'10922',name:'陳玉茹',join:'1998-09-01',group:'B'},
-  {id:'11468',name:'盧貞君',join:'2000-07-03',group:'B'},
-  {id:'12295',name:'林奕辰',join:'2004-10-21',group:'B'},
-  {id:'12483',name:'林靜子',join:'2005-09-02',group:'B'},
-  {id:'13288',name:'王嘉羚',join:'2010-01-04',group:'B'},
-  {id:'13565',name:'程郁淳',join:'2011-06-16',group:'B'},
-  {id:'14492',name:'謝佩芳',join:'2015-03-23',group:'B'},
-  {id:'14536',name:'張佩琪',join:'2015-05-25',group:'B'},
-  {id:'14635',name:'汪瑄柔',join:'2015-08-17',group:'B'},
-  {id:'14958',name:'林昕澄',join:'2017-03-20',group:'B'},
-  {id:'15423',name:'周芳怡',join:'2018-12-03',group:'B'},
-  {id:'15544',name:'黃淑嬅',join:'2019-08-05',group:'B'},
-  {id:'15577',name:'鄒芮宸',join:'2019-08-19',group:'B'},
-  {id:'15783',name:'蘇奕臻',join:'2020-07-13',group:'B'},
-  {id:'16304',name:'王婷玉',join:'2022-08-22',group:'B'},
-  {id:'16343',name:'黃玉秀',join:'2022-09-19',group:'B'},
-  {id:'16360',name:'辜嬿潔',join:'2022-10-17',group:'B'},
-  {id:'16587',name:'黃沂晨',join:'2023-08-21',group:'B'},
-  {id:'16650',name:'劉祐呈',join:'2023-10-16',group:'B'},
-  {id:'16946',name:'陳明瑄',join:'2024-09-02',group:'B'},
-  {id:'16949',name:'陳筠心',join:'2024-09-02',group:'B'},
-  {id:'17149',name:'余宗芸',join:'2025-04-07',group:'B'},
-  {id:'17212',name:'陳玥汝',join:'2025-07-21',group:'B'},
-  {id:'17307',name:'蕭睬容',join:'2025-10-07',group:'B'},
-  {id:'17223',name:'鄒昀珊',join:'2025-08-11',group:'B'},
-];
+// ── STATE ──
+let state = loadState();
 
-// ==================== STATE ====================
-let state = {
-  members: [],
-  records: [],
-  currentFilter: 'all',
-  currentGroup: 'A',
-  calYear: 2026,
-  calMonth: 5,
-  applyType: 'general',
-  leaveLength: 'short',
-  selectedApplyUserId: null,
-  selectedSwapPartnerId: null,
-  adminLoggedIn: false,
-  currentAdminTab: 0,
-  theme: {accent:'#2d6a4f',accent2:'#40916c',accentLight:'#d8f3dc'}
-};
-
-// ==================== JSONBIN STORAGE ====================
-// 免費雲端儲存，無需複雜設定
-// ⚙️ 請填入您的 JSONBin 資訊（見下方設定說明）
-const JSONBIN_SECRET = "$2a$10$QWRJoYppBda4jJdXKXewVOohsNyQ1FoltZxsfJ.V1zyN6PCPPTpQK";
-let   JSONBIN_BIN_ID = "YOUR_BIN_ID"; // 第一次開啟APP會自動建立
-
-let pollingInterval = null;
-let lastUpdatedAt   = null;
-
-function setSyncStatus(text) {
-  const el = document.getElementById('syncStatus');
-  if (el) el.textContent = text;
+function loadState(){
+  try{
+    const s = localStorage.getItem('leaveSystemState');
+    if(s) return JSON.parse(s);
+  }catch(e){}
+  const members = [...RAW_A,...RAW_B].map(m=>({...m,customLeave:null}));
+  return {members, applications:[], currentUserId:null, calYear:new Date().getFullYear(), calMonth:new Date().getMonth(), adminPassword:'AF0713'};
 }
 
-async function jsonbinGet() {
-  const res = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID + '/latest', {
-    headers: { 'X-Master-Key': JSONBIN_SECRET }
-  });
-  if (!res.ok) throw new Error('GET ' + res.status);
-  const j = await res.json();
-  return { data: j.record, updatedAt: j.metadata?.updatedAt || '' };
-}
-
-async function jsonbinPut(payload) {
-  const res = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_SECRET },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) throw new Error('PUT ' + res.status);
-  return await res.json();
-}
-
-async function jsonbinCreate(payload) {
-  const res = await fetch('https://api.jsonbin.io/v3/b', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Master-Key': JSONBIN_SECRET,
-      'X-Bin-Name': 'leave-system',
-      'X-Bin-Private': 'true'
-    },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) throw new Error('CREATE ' + res.status);
-  const j = await res.json();
-  return j.metadata.id;
-}
-
-
-function loadFromLocal() {
-  try {
-    const d = localStorage.getItem('leaveSystem_v2');
-    if (d) { const p = JSON.parse(d); state.members=p.members||[]; state.records=p.records||[]; state.theme=p.theme||state.theme; }
-    // 嘗試從 localStorage 還原 Bin ID
-    const savedId = localStorage.getItem('jsonbinId');
-    if (savedId && JSONBIN_BIN_ID === 'YOUR_BIN_ID') JSONBIN_BIN_ID = savedId;
-  } catch(e) {}
-  if (!state.members.length) state.members = DEFAULT_MEMBERS.map(m => ({...m, manualLeave: null}));
-}
-
-async function load() {
-  // 嘗試從 localStorage 讀取金鑰設定
-  const savedKey = localStorage.getItem('jb_key');
-  const savedBin = localStorage.getItem('jb_bin');
-  if (savedKey) JSONBIN_SECRET_DYN = savedKey;
-  if (savedBin) JSONBIN_BIN_ID = savedBin;
-
-  loadFromLocal();
-  applyTheme();
-  renderAll();
-
-  const key = JSONBIN_SECRET_DYN || JSONBIN_SECRET;
-  if (!key || key === 'YOUR_SECRET_KEY') {
-    setSyncStatus('⚙️ 請設定雲端');
-    setTimeout(showCloudSetup, 800);
-    return;
-  }
-
-  setSyncStatus('⏳ 連線中...');
-  try {
-    if (JSONBIN_BIN_ID === 'YOUR_BIN_ID') {
-      setSyncStatus('⏳ 初始化雲端...');
-      await saveToCloud(key);
-      startPolling();
-      return;
+// ── FIX 4: saveState 只把 business data 推到 Firebase，calYear/calMonth 只存 localStorage
+let _saveTimer = null;
+function saveState(){
+  try{ localStorage.setItem('leaveSystemState',JSON.stringify(state)); }catch(e){}
+  if(_saveTimer) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(async ()=>{
+    if(window._fbSave){
+      _ignoreNext = true;
+      await window._fbSave(state); // _fbSave 已過濾掉 calYear/calMonth
     }
-    const result = await jsonbinGetWithKey(key);
-    if (result && result.data && result.data.members) {
-      state.members = result.data.members || state.members;
-      state.records = result.data.records || state.records;
-      state.theme   = result.data.theme   || state.theme;
-      lastUpdatedAt = result.updatedAt;
-      applyTheme();
-      renderAll();
+  }, 300);
+}
+
+// ── FIX 3: 月曆切換只存本機，不觸發 Firebase 同步
+function saveCalendarLocal(){
+  try{ localStorage.setItem('leaveSystemState',JSON.stringify(state)); }catch(e){}
+}
+
+let _isListening = false;
+let _ignoreNext = false;
+
+function startFirebaseSync(){
+  if(_isListening) return;
+  _isListening = true;
+  if(!window._fbLoad) return;
+
+  // ── FIX 1 & 2: 啟動時從 Firebase 載入，不先推本機資料上去
+  window._fbLoad().then(remote => {
+    if(remote && remote.members){
+      state.applications = remote.applications || [];
+      state.members = remote.members || state.members;
+      state.adminPassword = remote.adminPassword || state.adminPassword;
+      // ── FIX 3: 不從 remote 恢復 calYear/calMonth，保持本機月曆視角
+      state.currentUserId = null;
+      try{ localStorage.setItem('leaveSystemState',JSON.stringify(state)); }catch(e){}
+      renderCurrentTab();
+      showSyncBadge('☁️ 已從雲端載入');
     }
-    setSyncStatus('☁️ 已同步');
-    startPolling();
-  } catch(e) {
-    console.error('JSONBin 連線失敗:', e);
-    setSyncStatus('⚠️ 離線模式');
-  }
-}
 
-let JSONBIN_SECRET_DYN = '';
-
-async function jsonbinGetWithKey(key) {
-  const bid = JSONBIN_BIN_ID;
-  if (bid === 'YOUR_BIN_ID') return null;
-  const res = await fetch('https://api.jsonbin.io/v3/b/' + bid + '/latest', {
-    headers: { 'X-Master-Key': key }
-  });
-  if (!res.ok) throw new Error('GET ' + res.status);
-  const j = await res.json();
-  return { data: j.record, updatedAt: j.metadata?.updatedAt || '' };
-}
-
-async function saveToCloud(key) {
-  const payload = { members: state.members, records: state.records, theme: state.theme, updatedAt: new Date().toISOString() };
-  if (JSONBIN_BIN_ID === 'YOUR_BIN_ID') {
-    const res = await fetch('https://api.jsonbin.io/v3/b', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'X-Master-Key': key, 'X-Bin-Name':'leave-system', 'X-Bin-Private':'true' },
-      body: JSON.stringify(payload)
+    // 即時監聽其他裝置的變更
+    window._fbListen((remote) => {
+      if(_ignoreNext){ _ignoreNext=false; return; }
+      if(!remote || !remote.members) return;
+      const myUser = currentUserId;
+      const myCalYear = calYear;   // ── FIX 3: 保留本機月曆視角
+      const myCalMonth = calMonth;
+      state.applications = remote.applications || [];
+      state.members = remote.members || state.members;
+      state.adminPassword = remote.adminPassword || state.adminPassword;
+      state.currentUserId = myUser;
+      state.calYear = myCalYear;   // 不被遠端覆蓋
+      state.calMonth = myCalMonth;
+      calYear = myCalYear;
+      calMonth = myCalMonth;
+      try{ localStorage.setItem('leaveSystemState',JSON.stringify(state)); }catch(e){}
+      renderCurrentTab();
+      showSyncBadge('🔄 已同步更新');
     });
-    if (!res.ok) throw new Error('CREATE ' + res.status);
-    const j = await res.json();
-    JSONBIN_BIN_ID = j.metadata.id;
-    localStorage.setItem('jb_bin', JSONBIN_BIN_ID);
-    showToast('✅ 雲端建立成功！');
-  } else {
-    const res = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID, {
-      method: 'PUT',
-      headers: { 'Content-Type':'application/json', 'X-Master-Key': key },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('PUT ' + res.status);
+  });
+}
+
+function showSyncBadge(msg){
+  let badge = document.getElementById('syncBadge');
+  if(!badge){
+    badge = document.createElement('div');
+    badge.id = 'syncBadge';
+    badge.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a202c;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;z-index:9999;opacity:1;transition:opacity 1s;';
+    document.body.appendChild(badge);
   }
-  setSyncStatus('☁️ 已同步');
-  lastUpdatedAt = payload.updatedAt;
+  badge.textContent = msg;
+  badge.style.opacity = '1';
+  setTimeout(()=>{ badge.style.opacity='0'; }, 2500);
 }
 
-async function save() {
-  try { localStorage.setItem('leaveSystem_v2', JSON.stringify({members:state.members,records:state.records,theme:state.theme})); } catch(e) {}
-  const key = JSONBIN_SECRET_DYN || JSONBIN_SECRET;
-  if (!key || key==='YOUR_SECRET_KEY' || JSONBIN_BIN_ID==='YOUR_BIN_ID') return;
-  setSyncStatus('⏳ 同步中...');
-  try {
-    await saveToCloud(key);
-  } catch(e) {
-    console.error('儲存失敗:', e);
-    setSyncStatus('⚠️ 離線（已存本機）');
-  }
+function renderCurrentTab(){
+  const activeTab = document.querySelector('#tabBar .tab-item.active');
+  if(!activeTab) return;
+  const tab = activeTab.dataset.tab;
+  if(tab==='records') renderRecords(recordFilter);
+  else if(tab==='groups') renderGroups();
+  else if(tab==='calendar') renderCalendar();
+  if(currentUserId) updateSelectedUserInfo();
 }
 
-function showCloudSetup() {
-  const modal = document.getElementById('modalContent');
-  const savedKey = localStorage.getItem('jb_key') || '';
-  const savedBin = localStorage.getItem('jb_bin') || '';
-  modal.innerHTML =
-    '<div class="modal-title">☁️ 雲端連線設定 <button class="modal-close" onclick="closeModal()">✕</button></div>' +
-    '<div class="alert alert-info" style="margin-bottom:12px">請到 <strong>jsonbin.io</strong> 登入後，從右上角帳號 → API Keys 複製 Secret Key</div>' +
-    '<div class="form-group"><label class="form-label">Secret Key（$2a$ 開頭）</label>' +
-    '<input class="form-control" id="setupKey" value="' + savedKey + '" placeholder="$2a$10$..."></div>' +
-    '<div class="form-group"><label class="form-label">Bin ID（第一次留空，會自動建立）</label>' +
-    '<input class="form-control" id="setupBin" value="' + savedBin + '" placeholder="留空自動建立"></div>' +
-    '<button class="btn btn-primary" onclick="applyCloudSetup()" style="margin-top:4px">🔗 連線</button>' +
-    '<button class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="closeModal()">稍後設定（離線使用）</button>';
-  document.getElementById('modalOverlay').classList.add('open');
+// ── TAIWAN HOLIDAYS (2025-2026 simplified) ──
+const TW_HOLIDAYS = new Set([
+  '2026-01-01','2026-02-17','2026-02-18','2026-02-19','2026-02-20','2026-02-23',
+  '2026-02-24','2026-04-03','2026-04-04','2026-04-05','2026-05-01',
+  '2026-06-19','2026-09-17','2026-09-18','2026-10-10','2026-10-12',
+  '2025-01-01','2025-02-01','2025-02-10','2025-04-04','2025-05-01',
+  '2025-05-31','2025-10-10',
+]);
+
+function isHoliday(d){
+  const dow = d.getDay();
+  if(dow===0||dow===6) return true;
+  return TW_HOLIDAYS.has(fmtDate(d));
 }
-
-async function applyCloudSetup() {
-  const key = document.getElementById('setupKey').value.trim();
-  const bin = document.getElementById('setupBin').value.trim();
-  if (!key) { showToast('請輸入 Secret Key'); return; }
-  localStorage.setItem('jb_key', key);
-  JSONBIN_SECRET_DYN = key;
-  if (bin) { localStorage.setItem('jb_bin', bin); JSONBIN_BIN_ID = bin; }
-  else { JSONBIN_BIN_ID = 'YOUR_BIN_ID'; }
-  closeModal();
-  setSyncStatus('⏳ 連線中...');
-  try {
-    await saveToCloud(key);
-    setSyncStatus('☁️ 已同步');
-    showToast('✅ 雲端連線成功！');
-    if (JSONBIN_BIN_ID !== 'YOUR_BIN_ID') {
-      localStorage.setItem('jb_bin', JSONBIN_BIN_ID);
-    }
-    startPolling();
-  } catch(e) {
-    setSyncStatus('⚠️ 連線失敗');
-    showToast('連線失敗：' + e.message);
-  }
-}
-
-function showSyncDebug(errMsg) {
-  showCloudSetup();
-}
-
-function showSyncDebug(errMsg) {
-  const binId = JSONBIN_BIN_ID;
-  const hasKey = JSONBIN_SECRET && !JSONBIN_SECRET.includes('YOUR');
-  const modal = document.getElementById('modalContent');
-  modal.innerHTML =
-    '<div class="modal-title">🔧 連線狀態 <button class="modal-close" onclick="closeModal()">✕</button></div>' +
-    '<div class="alert ' + (hasKey?'alert-success':'alert-danger') + '">金鑰：' + (hasKey?'✅ 已設定':'❌ 未設定') + '</div>' +
-    '<div class="alert ' + (binId!=='YOUR_BIN_ID'?'alert-success':'alert-warning') + '">Bin ID：' + (binId!=='YOUR_BIN_ID'?'✅ '+binId:'⚠️ 尚未建立') + '</div>' +
-    (errMsg ? '<div class="alert alert-danger">錯誤：' + errMsg + '</div>' : '') +
-    '<div style="margin-top:12px">' +
-    '<button class="btn btn-primary" onclick="closeModal();load()">🔄 重新連線</button>' +
-    '</div>';
-  document.getElementById('modalOverlay').classList.add('open');
-}
-
-function startPolling() {
-  if (pollingInterval) clearInterval(pollingInterval);
-  pollingInterval = setInterval(async () => {
-    if (JSONBIN_BIN_ID === 'YOUR_BIN_ID') return;
-    try {
-      const result = await jsonbinGet();
-      if (!result || !result.data) return;
-      if (result.updatedAt !== lastUpdatedAt) {
-        lastUpdatedAt = result.updatedAt;
-        state.members = result.data.members || state.members;
-        state.records = result.data.records || state.records;
-        state.theme   = result.data.theme   || state.theme;
-        applyTheme();
-        renderAll();
-        setSyncStatus('☁️ 已同步');
-      }
-    } catch(e) { setSyncStatus('⚠️ 連線中斷'); }
-  }, 20000);
-}
-
-function renderAll() {
-  renderGroupList();
-  renderCalendar();
-  renderRecords();
-  if (state.adminLoggedIn && state.currentAdminTab === 0) {
-    const el = document.getElementById('adminTabContent');
-    if (el) renderAdminReview(el);
-  }
-}
-
-// ==================== STATE ====================
-let state = {
-  members: [],
-  records: [],
-  currentFilter: 'all',
-  currentGroup: 'A',
-  calYear: 2026,
-  calMonth: 5,
-  applyType: 'general',
-  leaveLength: 'short',
-  selectedApplyUserId: null,
-  selectedSwapPartnerId: null,
-  adminLoggedIn: false,
-  currentAdminTab: 0,
-  theme: {accent:'#2d6a4f',accent2:'#40916c',accentLight:'#d8f3dc'}
-};
-
-// ==================== LEAVE CALCULATION ====================
-function calcLeave(joinDateStr, today, manualLeave) {
-  if (manualLeave !== null && manualLeave !== undefined && manualLeave !== '') return parseInt(manualLeave);
-  const join = new Date(joinDateStr);
-  const t = today || new Date();
-  const diffMs = t - join;
-  const diffDays = diffMs / (1000*60*60*24);
-  const months = diffDays / 30.44;
-  const years = diffDays / 365.25;
-
-  if (months < 6) return 0;
-  if (months < 12) return 3;
-  if (years < 2) return 7;
-  if (years < 3) return 10;
-  if (years < 5) return 14;
-  if (years < 10) return 15;
-  // 10+ years: 15 + 1/year over 10, max 30
-  const extra = Math.min(Math.floor(years - 10), 15);
-  return 15 + extra;
-}
-
-function getMember(query) {
-  if (!query) return null;
-  const q = query.trim();
-  return state.members.find(m => m.id === q || m.name === q) || null;
-}
-
-function getMemberLeave(m) {
-  return calcLeave(m.join, new Date(), m.manualLeave);
-}
-
-function usedLeave(memberId, excludeId) {
-  const now = new Date();
-  const yearStart = new Date(now.getFullYear(), 0, 1);
-  return state.records
-    .filter(r => r.userId === memberId && r.status === 'approved' && r.id !== excludeId)
-    .reduce((sum, r) => {
-      const s = new Date(r.startDate);
-      const e = new Date(r.endDate);
-      if (e >= yearStart) {
-        return sum + countWorkdays(r.startDate, r.endDate);
-      }
-      return sum;
-    }, 0);
-}
-
-// ==================== DATE UTILS ====================
-function isWeekend(d) { const day = d.getDay(); return day === 0 || day === 6; }
-function isHoliday(d) { return TAIWAN_HOLIDAYS_2025_2026.includes(toISO(d)); }
-function isNonWorkday(d) { return isWeekend(d) || isHoliday(d); }
-
-function toISO(d) {
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-
-function countWorkdays(startStr, endStr) {
-  let count = 0;
-  const s = new Date(startStr), e = new Date(endStr);
-  const cur = new Date(s);
-  while (cur <= e) {
-    if (!isNonWorkday(cur)) count++;
-    cur.setDate(cur.getDate()+1);
-  }
+function countWorkdays(start,end){
+  let count=0, d=new Date(start);
+  d.setHours(0,0,0,0);
+  const e=new Date(end); e.setHours(0,0,0,0);
+  while(d<=e){ if(!isHoliday(d)) count++; d.setDate(d.getDate()+1); }
   return count;
 }
+function fmtDate(d){ return d.toISOString().slice(0,10); }
+function parseDate(s){ const d=new Date(s); d.setHours(0,0,0,0); return d; }
+function todayStr(){ return fmtDate(new Date()); }
 
-function addMonths(date, months) {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + months);
-  return d;
+// ── LEAVE CALCULATION ──
+function calcLeave(joinDateStr){
+  const join = parseDate(joinDateStr.replace(/\//g,'-'));
+  const today = new Date(); today.setHours(0,0,0,0);
+  const ms = today - join;
+  const years = ms/(1000*60*60*24*365.25);
+  const months = ms/(1000*60*60*24*30.44);
+  if(months < 6) return 0;
+  if(months < 12) return 3;
+  if(years < 2) return 7;
+  if(years < 3) return 10;
+  if(years < 5) return 14;
+  if(years < 10) return 15;
+  return Math.min(15 + Math.floor(years-10), 30);
+}
+function getMember(id){ return state.members.find(m=>m.id===id); }
+function getMemberLeave(id){
+  const m=getMember(id); if(!m) return 0;
+  return m.customLeave!=null ? m.customLeave : calcLeave(m.join);
+}
+function usedLeave(memberId,year){
+  return state.applications
+    .filter(a=>a.applicantId===memberId && a.status==='done' && a.startDate.startsWith(year+''))
+    .reduce((s,a)=>s+a.workdays,0);
+}
+function remainLeave(memberId){
+  const total=getMemberLeave(memberId);
+  const used=usedLeave(memberId,new Date().getFullYear());
+  return total-used;
 }
 
-function dateStr(d) {
-  return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate();
+// ── CURRENT USER ──
+let currentUserId = null; // 每次開啟不自動還原
+
+function getCurrentUser(){ return currentUserId ? getMember(currentUserId) : null; }
+
+function searchUser(val){
+  if(!val.trim()){document.getElementById('userSuggestions').innerHTML='';return;}
+  const found = state.members.filter(m=>m.name.includes(val)||m.id.includes(val));
+  document.getElementById('userSuggestions').innerHTML = found.slice(0,6).map(m=>`
+    <div style="padding:8px 10px;cursor:pointer;border-radius:8px;background:var(--surface2);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;"
+      onclick="selectUser('${m.id}')">
+      <span>${m.name}</span>
+      <span class="badge badge-${m.group.toLowerCase()}">${m.group}組 #${m.id}</span>
+    </div>`).join('');
 }
 
-function formatISO(str) {
-  return str ? str.replace(/-/g, '/') : '';
+function selectUser(id){
+  currentUserId = id;
+  const m = getMember(id);
+  document.getElementById('userInput').value = m.name;
+  document.getElementById('userSuggestions').innerHTML='';
+  document.getElementById('currentUserBadge').textContent = m.name;
+  updateSelectedUserInfo();
+  document.getElementById('applyFormCard').style.display='block';
 }
 
-function formatDateTime(isoStr) {
-  if (!isoStr) return '';
-  const d = new Date(isoStr);
-  const pad = n => String(n).padStart(2,'0');
-  return d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate())
-    + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+function updateSelectedUserInfo(){
+  const m=getCurrentUser(); if(!m) return;
+  const total=getMemberLeave(m.id);
+  const used=usedLeave(m.id,new Date().getFullYear());
+  const remain=total-used;
+  const pct=total>0?Math.round(used/total*100):0;
+  document.getElementById('selectedUserInfo').innerHTML=`
+    <div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:600;">${m.name}</span>
+        <span class="badge badge-${m.group.toLowerCase()}">${m.group}組</span>
+      </div>
+      <div class="text-sm" style="margin-top:4px;">員編：${m.id} ｜ 到職：${m.join}</div>
+      <div style="margin-top:8px;display:flex;gap:12px;font-size:13px;">
+        <span>總特休：<b>${total}</b>天</span>
+        <span>已用：<b>${used}</b>天</span>
+        <span>剩餘：<b style="color:${remain<3?'var(--red)':'var(--green)'}">${remain}</b>天</span>
+      </div>
+      <div class="leave-bar-wrap" style="margin-top:6px;"><div class="leave-bar" style="width:${pct}%"></div></div>
+    </div>`;
 }
 
-// ==================== LOOKUP ====================
-function lookupUser(inputId, infoId) {
-  const q = document.getElementById(inputId).value.trim();
-  const m = getMember(q);
-  const div = document.getElementById(infoId);
-  if (!m) {
-    state.selectedApplyUserId = null;
-    div.innerHTML = q ? '<div class="alert alert-warning">找不到此員工</div>' : '';
-    return;
-  }
-  state.selectedApplyUserId = m.id;
-  const leave = getMemberLeave(m);
-  const used = usedLeave(m.id);
-  const remain = leave - used;
-  div.innerHTML = `<div class="alert alert-success">✓ ${m.name}（${m.id}）・${m.group}組・特休 ${leave} 天・已用 ${used} 天・剩 ${remain} 天</div>`;
+function switchUser(){
+  document.getElementById('switchSearch').value='';
+  renderSwitchList('');
+  document.getElementById('userSwitchOverlay').classList.add('active');
+}
+function renderSwitchList(q){
+  const list = state.members.filter(m=>!q||m.name.includes(q)||m.id.includes(q));
+  document.getElementById('switchList').innerHTML=list.map(m=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="selectUser('${m.id}');closeOverlay('userSwitchOverlay')">
+      <span>${m.name}</span>
+      <span class="badge badge-${m.group.toLowerCase()}">${m.group}</span>
+    </div>`).join('');
 }
 
-function lookupSwapPartner() {
-  const q = document.getElementById('swapPartner').value.trim();
-  const m = getMember(q);
-  const div = document.getElementById('swapPartnerInfo');
-  if (!m) {
-    state.selectedSwapPartnerId = null;
-    div.innerHTML = q ? '<div class="alert alert-warning">找不到此員工</div>' : '';
-    return;
-  }
-  // Must be different group
-  const applyM = state.members.find(x => x.id === state.selectedApplyUserId);
-  if (applyM && m.group === applyM.group) {
-    state.selectedSwapPartnerId = null;
-    div.innerHTML = '<div class="alert alert-danger">對調人員必須是另一組</div>';
-    return;
-  }
-  state.selectedSwapPartnerId = m.id;
-  const leave = getMemberLeave(m);
-  div.innerHTML = `<div class="alert alert-success">✓ ${m.name}（${m.id}）・${m.group}組・特休 ${leave} 天</div>`;
-}
-
-// ==================== APPLY TYPE SWITCH ====================
-function switchApplyType(type) {
-  state.applyType = type;
-  document.getElementById('typeGeneral').classList.toggle('active', type === 'general');
-  document.getElementById('typeSwap').classList.toggle('active', type === 'swap');
-  document.getElementById('generalApplySection').style.display = type === 'general' ? '' : 'none';
-  document.getElementById('swapApplySection').style.display = type === 'swap' ? '' : 'none';
-}
-
-function selectLeaveLength(len) {
-  state.leaveLength = len;
-  document.getElementById('shortLeaveChip').classList.toggle('selected', len === 'short');
-  document.getElementById('longLeaveChip').classList.toggle('selected', len === 'long');
-}
-
-// ==================== GENERAL APPLY ====================
-function calcGenDays() {
-  const s = document.getElementById('genStartDate').value;
-  const e = document.getElementById('genEndDate').value;
-  const div = document.getElementById('genDayInfo');
-  const blk = document.getElementById('genBlockInfo');
-  blk.innerHTML = '';
-  if (!s || !e) { div.textContent = ''; return; }
-  if (e < s) { div.textContent = '結束日不可早於開始日'; return; }
-
-  // 8 months from today
-  const today = new Date();
-  const maxDate = addMonths(today, 8);
-  if (new Date(s) > maxDate) {
-    div.textContent = '';
-    blk.innerHTML = '<div class="alert alert-danger">只能預約未來 8 個月內的假期</div>';
-    return;
-  }
-
-  const days = countWorkdays(s, e);
-  const isLong = days >= 5;
-  div.textContent = `工作天數：${days} 天`;
-
-  // Check leave length type
-  if (state.leaveLength === 'short' && days >= 5) {
-    blk.innerHTML = '<div class="alert alert-warning">短假類型最多4天，請改選「長假」或縮短假期</div>';
-    return;
-  }
-  if (state.leaveLength === 'long' && days > 15) {
-    blk.innerHTML = '<div class="alert alert-danger">長假最多 15 天</div>';
-    return;
-  }
-
-  if (isLong && state.selectedApplyUserId) {
-    checkLongLeaveBlock(s, e, state.selectedApplyUserId, null, blk);
-  }
-}
-
-// 找出整段假期中，每個工作日是否有同組長假佔用，回傳衝突工作日清單
-function findDayLevelConflicts(startStr, endStr, userId, excludeId, statusFilter) {
-  const member = state.members.find(m => m.id === userId);
-  if (!member) return [];
-  // 建立同組長假的工作日集合 { 'YYYY-MM-DD': {name, status} }
-  const blockedDays = {};
-  state.records.forEach(r => {
-    if (r.id === excludeId || r.userId === userId) return;
-    if (!statusFilter.includes(r.status)) return;
-    const rm = state.members.find(m => m.id === r.userId);
-    if (!rm || rm.group !== member.group) return;
-    if (countWorkdays(r.startDate, r.endDate) < 5) return;
-    // 展開這筆紀錄的每個工作日
-    const cur = new Date(r.startDate);
-    const end = new Date(r.endDate);
-    while (cur <= end) {
-      const ds = toISO(cur);
-      if (!isNonWorkday(cur)) {
-        if (!blockedDays[ds]) blockedDays[ds] = [];
-        blockedDays[ds].push({ name: rm.name, status: r.status, recId: r.id });
-      }
-      cur.setDate(cur.getDate() + 1);
-    }
-  });
-  // 檢查申請區間的每個工作日
-  const conflicts = [];
-  const cur = new Date(startStr);
-  const end = new Date(endStr);
-  while (cur <= end) {
-    const ds = toISO(cur);
-    if (!isNonWorkday(cur) && blockedDays[ds]) {
-      conflicts.push({ date: ds, blockers: blockedDays[ds] });
-    }
-    cur.setDate(cur.getDate() + 1);
-  }
-  return conflicts;
-}
-
-// 建議可分段申請的日期區間（衝突日之外的工作日段）
-function suggestSplitRanges(startStr, endStr, conflictDates) {
-  const conflictSet = new Set(conflictDates);
-  const segments = [];
-  let segStart = null;
-  const cur = new Date(startStr);
-  const end = new Date(endStr);
-  while (cur <= end) {
-    const ds = toISO(cur);
-    if (!isNonWorkday(cur)) {
-      if (!conflictSet.has(ds)) {
-        if (!segStart) segStart = ds;
-      } else {
-        if (segStart) { segments.push({ s: segStart, e: toISO(new Date(cur.getTime() - 86400000)) }); segStart = null; }
-      }
-    }
-    cur.setDate(cur.getDate() + 1);
-  }
-  if (segStart) segments.push({ s: segStart, e: endStr });
-  return segments;
-}
-
-function checkLongLeaveBlock(startStr, endStr, userId, excludeId, blk, isSwap) {
-  const member = state.members.find(m => m.id === userId);
-  if (!member) return false;
-  const totalLeave = getMemberLeave(member);
-  const used = usedLeave(userId, excludeId);
-  const remain = totalLeave - used;
-  const days = countWorkdays(startStr, endStr);
-
-  if (days > remain) {
-    if (blk) blk.innerHTML = '<div class="alert alert-danger">超過剩餘特休天數（剩 ' + remain + ' 天）</div>';
-    return false;
-  }
-  if (days > Math.floor(totalLeave / 2)) {
-    if (blk) blk.innerHTML = '<div class="alert alert-danger">你已超過個人特休天數 1/2（上限 ' + Math.floor(totalLeave/2) + ' 天）</div>';
-    return false;
-  }
-
-  if (isSwap) {
-    // 對調：逐日檢查 approved 長假衝突
-    const approvedConflicts = findDayLevelConflicts(startStr, endStr, userId, excludeId, ['approved']);
-    const pendingConflicts  = findDayLevelConflicts(startStr, endStr, userId, excludeId, ['pending']);
-
-    if (approvedConflicts.length > 0) {
-      // 全段都被 approved 佔 → 允許對調（原有邏輯）
-      const allBlocked = approvedConflicts.length === days;
-      const swapConflict = state.records.filter(r => {
-        if (r.id === excludeId || r.userId === userId) return false;
-        if (r.type !== 'swap') return false;
-        if (r.status === 'cancelled' || r.status === 'rejected') return false;
-        const rm = state.members.find(m => m.id === r.userId);
-        if (!rm || rm.group !== member.group) return false;
-        if (countWorkdays(r.startDate, r.endDate) < 5) return false;
-        return datesOverlap(startStr, endStr, r.startDate, r.endDate);
-      });
-      if (swapConflict.length > 0) {
-        const snames = swapConflict.map(r => state.members.find(m=>m.id===r.userId)?.name||'').join('、');
-        if (blk) blk.innerHTML = '<div class="alert alert-danger">該假期 ' + member.group + ' 組對調名額已被 ' + snames + ' 申請中</div>';
-        return false;
-      }
-      const names = [...new Set(approvedConflicts.flatMap(c => c.blockers.map(b => b.name)))].join('、');
-      if (blk) blk.innerHTML = '<div class="alert alert-info">💡 ' + member.group + '組 ' + names + ' 已完成預約同段假期，允許你透過對調申請加入。</div>';
-      return true;
-    }
-    if (pendingConflicts.length > 0) {
-      const names = [...new Set(pendingConflicts.flatMap(c => c.blockers.map(b => b.name)))].join('、');
-      if (blk) blk.innerHTML = '<div class="alert alert-warning">該假期 ' + member.group + ' 組有待審核長假（' + names + '），請等確認核准後再申請對調</div>';
-      return false;
-    }
-    if (blk) blk.innerHTML = '';
-    return true;
-
-  } else {
-    // 一般申請：逐日檢查 approved + pending 衝突
-    const allConflicts = findDayLevelConflicts(startStr, endStr, userId, excludeId, ['approved', 'pending']);
-    if (allConflicts.length === 0) { if (blk) blk.innerHTML = ''; return true; }
-
-    // 有衝突 → 找出衝突日期、衝突人員、建議分段
-    const conflictDates = allConflicts.map(c => c.date);
-    const blockerNames = [...new Set(allConflicts.flatMap(c => c.blockers.map(b => b.name)))].join('、');
-    const firstConflict = conflictDates[0];
-    const lastConflict  = conflictDates[conflictDates.length - 1];
-
-    // 建議分段
-    const segments = suggestSplitRanges(startStr, endStr, new Set(conflictDates));
-    let segHtml = '';
-    if (segments.length > 0) {
-      segHtml = '<div style="margin-top:6px;font-size:12px"><strong>建議分段申請：</strong><ul style="margin:4px 0 0 16px;padding:0">' +
-        segments.map(seg => {
-          const d = countWorkdays(seg.s, seg.e);
-          return '<li>' + formatISO(seg.s) + ' – ' + formatISO(seg.e) + '（' + d + ' 工作天）</li>';
-        }).join('') +
-        '</ul></div>';
-    }
-
-    if (blk) blk.innerHTML =
-      '<div class="alert alert-danger">' +
-        '⛔ 假期中有 ' + allConflicts.length + ' 個工作日（' + formatISO(firstConflict) + ' – ' + formatISO(lastConflict) + '）' +
-        '與 ' + member.group + ' 組 <strong>' + blockerNames + '</strong> 的預約衝突，不予通過。' +
-        segHtml +
-        '<div style="margin-top:6px;font-size:12px">💡 也可改為<strong>對調申請</strong>（若同組已有人完成預約）</div>' +
-      '</div>';
-    return false;
-  }
-}
-
-function datesOverlap(s1, e1, s2, e2) {
-  return s1 <= e2 && e1 >= s2;
-}
-
-function submitGeneral() {
-  const userId = state.selectedApplyUserId;
-  if (!userId) { showToast('請先填寫申請人資訊'); return; }
-  const s = document.getElementById('genStartDate').value;
-  const e = document.getElementById('genEndDate').value;
-  if (!s || !e || e < s) { showToast('請選擇正確日期'); return; }
-
-  const today = new Date();
-  const maxDate = addMonths(today, 8);
-  if (new Date(s) > maxDate) { showToast('只能預約未來 8 個月內'); return; }
-
-  const days = countWorkdays(s, e);
-  const member = state.members.find(m => m.id === userId);
-  const leave = getMemberLeave(member);
-  const used = usedLeave(userId);
-  const remain = leave - used;
-
-  if (days > remain) { showToast(`剩餘特休不足（剩 ${remain} 天）`); return; }
-
-  const isLong = days >= 5;
-  if (isLong) {
-    const blk = document.getElementById('genBlockInfo');
-    if (!checkLongLeaveBlock(s, e, userId, null, blk)) return;
-  }
-
-  const rec = {
-    id: 'R' + Date.now(),
-    userId,
-    type: 'general',
-    startDate: s,
-    endDate: e,
-    days,
-    isLong,
-    note: document.getElementById('genNote').value,
-    status: 'pending',
-    history: [{time: new Date().toISOString(), action: '提交申請'}],
-    createdAt: new Date().toISOString(),
-    adminMaxOverlap: 1
-  };
-
-  state.records.push(rec);
-  save();
-  showToast('申請已送出，等待主管核准');
-  document.getElementById('genStartDate').value = '';
-  document.getElementById('genEndDate').value = '';
-  document.getElementById('genNote').value = '';
-  document.getElementById('genDayInfo').textContent = '';
-  document.getElementById('genBlockInfo').innerHTML = '';
-}
-
-// ==================== SWAP APPLY ====================
-function calcSwapLimits() {
-  // 申請假期欄位已移除，此函式保留供相容性
-}
-
-function calcSwapDays() {
-  const s = document.getElementById('swapTheirStart').value;
-  const e = document.getElementById('swapTheirEnd').value;
-  const div = document.getElementById('swapTheirDayInfo');
-  if (!s || !e) { div.textContent = ''; return; }
-  div.textContent = `工作天數：${countWorkdays(s, e)} 天`;
-}
-
-function submitSwap() {
-  const userId = state.selectedApplyUserId;
-  const partnerId = state.selectedSwapPartnerId;
-  if (!userId) { showToast('請填寫申請人'); return; }
-  if (!partnerId) { showToast('請選擇對調人員'); return; }
-
-  const theirS = document.getElementById('swapTheirStart').value;
-  const theirE = document.getElementById('swapTheirEnd').value;
-
-  if (!theirS || !theirE) { showToast('請填寫對調假期日期'); return; }
-  if (theirE < theirS) { showToast('結束日不可早於開始日'); return; }
-
-  const theirDays = countWorkdays(theirS, theirE);
-  if (theirDays < 5 || theirDays > 15) { showToast('對調假期須為 5–15 個工作天'); return; }
-
-  const blk = document.getElementById('swapBlockInfo');
-  if (!checkLongLeaveBlock(theirS, theirE, userId, null, blk, true)) return;
-
-  const rec = {
-    id: 'S' + Date.now(),
-    userId,
-    partnerId,
-    type: 'swap',
-    startDate: theirS,
-    endDate: theirE,
-    days: theirDays,
-    isLong: true,
-    swapStart: theirS,
-    swapEnd: theirE,
-    swapDays: theirDays,
-    status: 'swap_pending',
-    history: [{time: new Date().toISOString(), action: '提交對調申請，待對調人確認'}],
-    createdAt: new Date().toISOString(),
-    adminMaxOverlap: 1
-  };
-
-  state.records.push(rec);
-  save();
-  showToast('對調申請已送出，等待對調人員確認');
-  // Reset
-  ['swapTheirStart','swapTheirEnd'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('swapTheirDayInfo').textContent = '';
-  document.getElementById('swapDateHint').textContent = '';
-  document.getElementById('swapBlockInfo').innerHTML = '';
-}
-
-// ==================== RECORDS ====================
-let recordFilter = 'all';
-function setFilter(f, el) {
-  recordFilter = f;
-  document.querySelectorAll('#recordFilter .chip').forEach(c => c.classList.remove('active'));
+// ── APPLY TYPE ──
+let applyType='normal';
+function setApplyType(t,el){
+  applyType=t;
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  renderRecords();
+  document.getElementById('normalForm').style.display=t==='normal'?'block':'none';
+  document.getElementById('swapForm').style.display=t==='swap'?'block':'none';
 }
 
-function renderRecords() {
-  const search = document.getElementById('recordSearch').value.toLowerCase();
-  const list = document.getElementById('recordList');
+function getMaxFutureDate(){
+  const d=new Date(); d.setMonth(d.getMonth()+8);
+  return fmtDate(d);
+}
 
-  let recs = [...state.records].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
-
-  // Update overdue statuses
-  recs.forEach(r => {
-    if (r.type === 'swap' && r.status === 'swap_pending') {
-      if (r.swapExpiry && new Date() > new Date(r.swapExpiry)) {
-        r.status = 'overdue';
-      }
-    }
-  });
-
-  if (recordFilter !== 'all') recs = recs.filter(r => r.status === recordFilter);
-  if (search) recs = recs.filter(r => {
-    const m = state.members.find(m => m.id === r.userId);
-    const p = r.partnerId ? state.members.find(m => m.id === r.partnerId) : null;
-    return (m && (m.name.includes(search) || m.id.includes(search))) ||
-           (p && (p.name.includes(search) || p.id.includes(search)));
-  });
-
-  if (!recs.length) {
-    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>目前無申請紀錄</p></div>';
+function calcNormalDays(){
+  const s=document.getElementById('normalStart').value;
+  const e=document.getElementById('normalEnd').value;
+  const btn=document.getElementById('submitNormalBtn');
+  if(!s||!e){
+    document.getElementById('normalDayCount').innerHTML='';
+    // 重置按鈕（日期清空時）
+    if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; btn.textContent='📤 送出申請'; }
     return;
   }
-
-  list.innerHTML = recs.map(r => renderRecord(r, false)).join('');
+  if(parseDate(e)<parseDate(s)){document.getElementById('normalDayCount').innerHTML='<span style="color:var(--red)">結束日期不可早於開始日期</span>';return;}
+  const wd=countWorkdays(parseDate(s),parseDate(e));
+  document.getElementById('normalDayCount').innerHTML=`計算工作天數：<b>${wd}</b>天`;
+  checkNormalConflict(s,e,wd);
 }
 
-function statusBadge(status) {
-  const map = {
-    approved: ['badge-success','已完成'],
-    pending: ['badge-warning','主管審核中'],
-    swap_pending: ['badge-info','對調待確認'],
-    overdue: ['badge-danger','對調逾期'],
-    rejected: ['badge-danger','已退件'],
-    modified: ['badge-gray','已修改'],
-    swap_modify_pending: ['badge-info','對調修改待確認'],
-    cancelled: ['badge-gray','已取消'],
+function checkNormalConflict(startStr,endStr,wd){
+  const m=getCurrentUser(); if(!m) return;
+  const start=parseDate(startStr), end=parseDate(endStr);
+  const conflicts=[];
+  const sameGroup = state.members.filter(x=>x.group===m.group && x.id!==m.id);
+  for(const other of sameGroup){
+    const otherApps = state.applications.filter(a=>a.applicantId===other.id && ['done','pending'].includes(a.status));
+    for(const app of otherApps){
+      const as=parseDate(app.startDate), ae=parseDate(app.endDate);
+      if(start<=ae && end>=as){
+        const overlapDays=[];
+        let d=new Date(Math.max(start,as));
+        while(d<=new Date(Math.min(end,ae))){ if(!isHoliday(d)) overlapDays.push(fmtDate(d)); d.setDate(d.getDate()+1); }
+        if(overlapDays.length>0) conflicts.push({name:other.name,days:overlapDays,wd:overlapDays.length});
+      }
+    }
+  }
+
+  let html='';
+  let blocked=false; // 是否阻擋送出
+
+  // 長假工作日衝突 → 阻擋
+  if(conflicts.length>0 && wd>=5){
+    blocked=true;
+    html+=`<div class="conflict-box">⛔ <b>工作日衝突，無法送出申請</b><br>`;
+    for(const c of conflicts) html+=`與 ${c.name} 重疊 ${c.wd} 個工作日（${c.days[0]} ~ ${c.days[c.days.length-1]}）<br>`;
+    html+=`</div>`;
+    const busyDays=new Set(conflicts.flatMap(c=>c.days));
+    const segments=getSuggestSegments(start,end,busyDays);
+    if(segments.length>0){
+      html+=`<div class="suggest-box">📋 建議改為分段申請：<br>`;
+      for(const seg of segments) html+=`${seg.start} – ${seg.end}（${seg.wd} 工作天）<br>`;
+      html+=`💡 也可改用對調申請方式</div>`;
+    }
+  }
+
+  // 超過個人特休1/2 → 阻擋
+  const total=getMemberLeave(m.id);
+  const halfQuota=Math.floor(total/2);
+  if(wd>=5 && wd>halfQuota){
+    blocked=true;
+    html+=`<div class="alert alert-err">⛔ 長假天數超過個人特休1/2（上限 ${halfQuota} 天），無法送出</div>`;
+  }
+
+  // 本組已有長假名額 → 阻擋
+  if(wd>=5){
+    const longConflict=checkLongLeaveConflict(m.group,start,end,m.id);
+    if(longConflict){
+      blocked=true;
+      html+=`<div class="alert alert-err">⛔ 本組已有長假預約名額（${longConflict}），無法送出</div>`;
+    }
+  }
+
+  document.getElementById('normalConflict').innerHTML=html;
+  const used=usedLeave(m.id,new Date().getFullYear());
+  document.getElementById('normalLeaveInfo').innerHTML=`<div class="text-sm">剩餘特休：${total-used}天 | 本次申請：${wd}天</div>`;
+
+  // 控制送出按鈕的啟用/停用狀態
+  const btn=document.getElementById('submitNormalBtn');
+  if(btn){
+    btn.disabled=blocked;
+    btn.style.opacity=blocked?'0.4':'1';
+    btn.style.cursor=blocked?'not-allowed':'pointer';
+    btn.textContent=blocked?'⛔ 無法送出（請先解決衝突）':'📤 送出申請';
+  }
+}
+
+function checkLongLeaveConflict(group,start,end,excludeId){
+  const sameGroup=state.members.filter(m=>m.group===group&&m.id!==excludeId);
+  for(const m of sameGroup){
+    const longApps=state.applications.filter(a=>a.applicantId===m.id && a.workdays>=5 && ['done','pending'].includes(a.status));
+    for(const app of longApps){
+      const as=parseDate(app.startDate),ae=parseDate(app.endDate);
+      if(start<=ae&&end>=as && !isHolidayRange(start,end)) return m.name;
+    }
+  }
+  return null;
+}
+function isHolidayRange(start,end){
+  let d=new Date(start);
+  while(d<=end){ if(!isHoliday(d)) return false; d.setDate(d.getDate()+1); }
+  return true;
+}
+function getSuggestSegments(start,end,busyDays){
+  const segs=[];
+  let segStart=null, segEnd=null;
+  let d=new Date(start);
+  while(d<=end){
+    const key=fmtDate(d);
+    if(!isHoliday(d)&&!busyDays.has(key)){
+      if(!segStart) segStart=new Date(d);
+      segEnd=new Date(d);
+    } else {
+      if(segStart){ segs.push({start:fmtDate(segStart),end:fmtDate(segEnd),wd:countWorkdays(segStart,segEnd)}); segStart=null; }
+    }
+    d.setDate(d.getDate()+1);
+  }
+  if(segStart) segs.push({start:fmtDate(segStart),end:fmtDate(segEnd),wd:countWorkdays(segStart,segEnd)});
+  return segs;
+}
+
+// ── SUBMIT NORMAL ──
+function submitNormal(){
+  const m=getCurrentUser();
+  if(!m){alert('請先選擇用戶');return;}
+  const s=document.getElementById('normalStart').value;
+  const e=document.getElementById('normalEnd').value;
+  if(!s||!e){alert('請填寫日期');return;}
+  const start=parseDate(s),end=parseDate(e);
+  if(end<start){alert('結束日期不可早於開始日期');return;}
+  const max=parseDate(getMaxFutureDate());
+  if(end>max){alert('不可超過未來8個月');return;}
+  const today=new Date();today.setHours(0,0,0,0);
+  if(start<today){alert('不可申請過去日期');return;}
+  const wd=countWorkdays(start,end);
+  const total=getMemberLeave(m.id);
+  if(wd>total){alert(`申請天數(${wd})超過特休總額(${total})`);return;}
+  const halfQuota=Math.floor(total/2);
+  if(wd>=5&&wd>halfQuota){alert(`⛔ 長假天數超過個人特休1/2（上限 ${halfQuota} 天）`);return;}
+
+  // 長假：檢查工作日衝突
+  if(wd>=5){
+    const sameGroup=state.members.filter(x=>x.group===m.group && x.id!==m.id);
+    for(const other of sameGroup){
+      const otherApps=state.applications.filter(a=>a.applicantId===other.id && ['done','pending'].includes(a.status));
+      for(const app of otherApps){
+        const as=parseDate(app.startDate), ae=parseDate(app.endDate);
+        if(start<=ae && end>=as){
+          let overlap=0;
+          let d=new Date(Math.max(start,as));
+          while(d<=new Date(Math.min(end,ae))){ if(!isHoliday(d)) overlap++; d.setDate(d.getDate()+1); }
+          if(overlap>0){ alert(`⛔ 與 ${other.name} 有 ${overlap} 個工作日重疊，無法送出申請\n請改為分段申請或使用對調申請`); return; }
+        }
+      }
+    }
+    const lc=checkLongLeaveConflict(m.group,start,end,m.id);
+    if(lc){alert(`⛔ 本組已有長假預約名額（${lc}），無法送出`);return;}
+  }
+
+  const app={
+    id:'APP'+Date.now(),
+    applicantId:m.id, applicantName:m.name, group:m.group,
+    type:'normal', startDate:s, endDate:e, workdays:wd,
+    status:'pending', appliedAt:new Date().toISOString(), note:'', history:[]
   };
-  const [cls, label] = map[status] || ['badge-gray', status];
-  return `<span class="badge ${cls}">${label}</span>`;
+  state.applications.push(app);
+  saveState();
+  alert(`申請成功！已送出等待主管審核\n${m.name}：${s} ~ ${e}（${wd}工作天）`);
+  document.getElementById('normalStart').value='';
+  document.getElementById('normalEnd').value='';
+  document.getElementById('normalDayCount').innerHTML='';
+  document.getElementById('normalConflict').innerHTML='';
+  document.getElementById('normalLeaveInfo').innerHTML='';
+  // 重置按鈕狀態
+  const btn=document.getElementById('submitNormalBtn');
+  if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.textContent='📤 送出申請'; }
 }
 
-function renderRecord(r, isAdmin) {
-  const m = state.members.find(m => m.id === r.userId);
-  const p = r.partnerId ? state.members.find(m => m.id === r.partnerId) : null;
-  const name = m ? m.name : r.userId;
-  const group = m ? m.group + '組' : '';
-
-  let swapInfo = '';
-  if (r.type === 'swap' && p) {
-    swapInfo = `<div style="font-size:11px;color:#5a5850;margin-top:4px">🔄 對調：${p.name}（${p.group}組）・${formatISO(r.swapStart)} – ${formatISO(r.swapEnd)}（${r.swapDays}天）</div>`;
-  }
-
-  let actions = '';
-
-  if (!isAdmin) {
-    // 一般同仁僅能確認對調，無修改/取消功能
-    if (r.type === 'swap' && r.status === 'swap_pending') {
-      actions += `<button class="btn btn-sm btn-outline" onclick="confirmSwap('${r.id}')">確認對調</button>`;
-    }
+// ── SWAP ──
+let swapPartnerId=null;
+function lookupSwapPartner(val){
+  const m=getCurrentUser(); if(!m) return;
+  const v=val.trim();
+  const infoEl=document.getElementById('selectedPartnerInfo');
+  if(!v){swapPartnerId=null;infoEl.innerHTML='';return;}
+  const otherGroup=m.group==='A'?'B':'A';
+  const found=state.members.find(x=>x.id===v&&x.group===otherGroup);
+  if(found){
+    swapPartnerId=found.id;
+    infoEl.innerHTML=`<div class="alert alert-ok">✓ ${found.name}（${found.group}組，#${found.id}）</div>`;
   } else {
-    if (r.status === 'pending' || r.status === 'swap_pending') {
-      actions += `<button class="btn btn-sm btn-primary" onclick="adminApprove('${r.id}')">核准</button>`;
-      actions += `<button class="btn btn-sm btn-danger" onclick="adminReject('${r.id}')">退件</button>`;
-    }
-    if (r.type === 'swap' && r.status === 'approved') {
-      actions += `<button class="btn btn-sm btn-outline" onclick="markSwapDone('${r.id}')">確認對調執行</button>`;
-    }
-    actions += `<button class="btn btn-sm btn-secondary" onclick="editRecord('${r.id}')">修改</button>`;
-    if (r.status !== 'cancelled') actions += `<button class="btn btn-sm btn-danger" onclick="cancelRecord('${r.id}')">取消</button>`;
+    swapPartnerId=null;
+    const wrongGroup=state.members.find(x=>x.id===v);
+    if(wrongGroup) infoEl.innerHTML=`<div class="alert alert-err">⚠️ ${wrongGroup.name} 為 ${wrongGroup.group} 組，對調人員需為 ${otherGroup} 組</div>`;
+    else if(v.length>=4) infoEl.innerHTML=`<div class="alert alert-err">未找到員工編號 ${v}</div>`;
+    else infoEl.innerHTML='';
   }
+}
 
-  const history = r.history ? r.history.slice(-3).map(h => {
-    const dt = formatDateTime(h.time);
-    return `<div class="timeline-item">${dt} ${h.action}</div>`;
-  }).join('') : '';
+function calcSwapDays(){
+  const ms=document.getElementById('swapMyStart').value;
+  const me=document.getElementById('swapMyEnd').value;
+  if(!ms||!me){document.getElementById('swapDayCount').innerHTML='';return;}
+  const start=parseDate(ms), end=parseDate(me);
+  if(end<start){document.getElementById('swapDayCount').innerHTML='<span style="color:var(--red)">結束日期不可早於開始日期</span>';return;}
+  const wd=countWorkdays(start,end);
+  let info=`計算工作天數：<b>${wd}</b>天`;
+  if(wd<5) info+=`<span style="color:var(--orange);margin-left:8px;">對調申請需 5 天以上</span>`;
+  if(wd>15) info+=`<span style="color:var(--red);margin-left:8px;">對調申請上限 15 天</span>`;
+  document.getElementById('swapDayCount').innerHTML=`<div class="text-sm">${info}</div>`;
+}
 
-  return `<div class="record-card">
+function submitSwap(){
+  const m=getCurrentUser(); if(!m){alert('請先選擇用戶');return;}
+  if(!swapPartnerId){alert('請選擇對調人員');return;}
+  const ms=document.getElementById('swapMyStart').value;
+  const me=document.getElementById('swapMyEnd').value;
+  if(!ms||!me){alert('請填寫假期日期');return;}
+  const myStart=parseDate(ms), myEnd=parseDate(me);
+  if(myEnd<myStart){alert('結束日期不可早於開始日期');return;}
+  const today=new Date(); today.setHours(0,0,0,0);
+  if(myStart<today){alert('不可申請過去日期');return;}
+  const maxD=parseDate(getMaxFutureDate());
+  if(myEnd>maxD){alert('不可超過未來8個月');return;}
+  const wd=countWorkdays(myStart,myEnd);
+  if(wd<5){alert('對調申請需要至5天以上');return;}
+  if(wd>15){alert('對調申請上限是15天');return;}
+  const partner=getMember(swapPartnerId);
+  const app={
+    id:'APP'+Date.now(),
+    applicantId:m.id, applicantName:m.name, group:m.group,
+    partnerId:swapPartnerId, partnerName:partner.name,
+    type:'swap', startDate:ms, endDate:me, workdays:wd,
+    status:'swap_pending', appliedAt:new Date().toISOString(),
+    note:'', history:[], partnerConfirmed:false
+  };
+  state.applications.push(app);
+  saveState();
+  alert(`對調申請已送出！\n已通知 ${partner.name} 確認`);
+  swapPartnerId=null;
+  document.getElementById('swapPartnerInput').value='';
+  document.getElementById('selectedPartnerInfo').innerHTML='';
+  document.getElementById('swapMyStart').value='';
+  document.getElementById('swapMyEnd').value='';
+  document.getElementById('swapDayCount').innerHTML='';
+}
+
+// ── RECORDS ──
+let recordFilter='all';
+function filterRecords(f,el){
+  recordFilter=f;
+  document.querySelectorAll('#recordFilter .filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderRecords(f);
+}
+function renderRecords(filter){
+  let apps=[...state.applications].sort((a,b)=>b.appliedAt.localeCompare(a.appliedAt));
+  if(filter!=='all') apps=apps.filter(a=>a.status===filter);
+  const el=document.getElementById('recordsList');
+  if(!apps.length){el.innerHTML='<div class="text-muted" style="padding:20px;text-align:center;">無記錄</div>';return;}
+  el.innerHTML=apps.map(a=>renderRecordItem(a,false)).join('');
+  checkExpiredSwaps();
+}
+
+function renderRecordItem(a,isAdmin){
+  const partner=a.partnerId?getMember(a.partnerId):null;
+  const statusMap={pending:'badge-yellow',done:'badge-green',rejected:'badge-red',swap_pending:'badge-orange',swap_expired:'badge-red'};
+  let actionBtns='';
+  if(isAdmin){
+    if(a.status==='pending'||a.status==='swap_pending'){
+      actionBtns+=`<button class="btn btn-success btn-sm" onclick="approveApp('${a.id}','done')">✓ 核准</button>
+        <button class="btn btn-danger btn-sm" onclick="approveApp('${a.id}','rejected')">✗ 退件</button>`;
+    }
+    actionBtns+=`<button class="btn btn-ghost btn-sm" onclick="openAdminEdit('${a.id}')">✏️ 修改</button>`;
+  } else {
+    if(a.status==='swap_pending' && a.partnerId===currentUserId){
+      actionBtns+=`<button class="btn btn-success btn-sm" onclick="confirmSwap('${a.id}',true)">✓ 確認對調</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmSwap('${a.id}',false)">✗ 拒絕</button>`;
+    }
+  }
+  return `<div class="record-item">
     <div class="record-header">
       <div>
-        <div class="record-name">${name} <span style="font-size:11px;color:var(--text3);font-weight:400">${group}</span></div>
-        <div class="record-meta">${r.type === 'swap' ? '🔄 對調' : '📅 一般'} ・ ${r.isLong ? '長假' : '短假'} ・ ${r.days} 工作天</div>
-        <div class="record-meta" style="margin-top:2px">🕐 申請時間：${formatDateTime(r.createdAt)}</div>
+        <div class="record-name">${a.applicantName} <span class="badge badge-${(a.group||'A').toLowerCase()}">${a.group||'A'}組</span></div>
+        <div class="record-dates">${a.startDate} ~ ${a.endDate}（${a.workdays}工作天）
+          ${a.type==='swap'?`<br>對調：${partner?partner.name:a.partnerName}`:''}
+        </div>
       </div>
-      ${statusBadge(r.status)}
+      <span class="badge ${statusMap[a.status]||'badge-gray'}">${statusLabel(a.status)}</span>
     </div>
-    <div class="record-dates">📆 ${formatISO(r.startDate)} – ${formatISO(r.endDate)}</div>
-    ${swapInfo}
-    ${history}
-    ${actions ? `<div class="record-actions">${actions}</div>` : ''}
+    <div class="record-footer">
+      <span class="badge ${a.type==='swap'?'badge-purple':'badge-gray'}">${a.type==='swap'?'對調':'一般'}</span>
+      <span class="text-sm">${a.appliedAt?a.appliedAt.slice(0,16).replace('T',' '):''}</span>
+      ${actionBtns}
+    </div>
   </div>`;
 }
 
-function confirmSwap(id) {
-  const r = state.records.find(x => x.id === id);
-  if (!r) return;
-  r.status = 'approved';
-  r.history.push({time: new Date().toISOString(), action: '對調人員確認，待主管簽核'});
-  save();
-  renderRecords();
-  showToast('對調已確認，等待主管審核');
+function statusLabel(s){
+  const m={pending:'待審核',done:'已完成',rejected:'已退件',swap_pending:'對調待確認',swap_expired:'對調逾期'};
+  return m[s]||s;
 }
 
-function cancelRecord(id) {
-  const r = state.records.find(x => x.id === id);
-  if (!r) return;
-  r.status = 'cancelled';
-  r.history.push({time: new Date().toISOString(), action: '取消申請'});
-  save();
-  renderRecords();
-  renderCalendar();
-  showToast('申請已取消，特休天數已退還');
-}
-
-function markSwapDone(id) {
-  const r = state.records.find(x => x.id === id);
-  if (!r) return;
-  r.status = 'approved';
-  r.swapExecuted = true;
-  r.history.push({time: new Date().toISOString(), action: '管理員確認對調已執行'});
-  save();
-  renderRecords();
-  showToast('對調已標記為完成');
-}
-
-function editRecord(id) {
-  const r = state.records.find(x => x.id === id);
-  if (!r) return;
-  const m = state.members.find(x => x.id === r.userId);
-  const modal = document.getElementById('modalContent');
-
-  if (state.adminLoggedIn) {
-    const statusOptions = [
-      {v:'pending',l:'待審核'},{v:'approved',l:'已完成'},
-      {v:'swap_pending',l:'對調待確認'},{v:'rejected',l:'已退件'},
-      {v:'cancelled',l:'已取消'},{v:'modified',l:'已修改'}
-    ].map(o => '<option value="' + o.v + '"' + (r.status===o.v?' selected':'') + '>' + o.l + '</option>').join('');
-
-    const userOpts = state.members.map(x =>
-      '<option value="' + x.id + '"' + (r.userId===x.id?' selected':'') + '>' + x.name + '（' + x.group + '組）</option>'
-    ).join('');
-    const partnerOpts = '<option value="">（無）</option>' + state.members
-      .filter(x => x.id !== r.userId)
-      .map(x => '<option value="' + x.id + '"' + (r.partnerId===x.id?' selected':'') + '>' + x.name + '（' + x.group + '組）</option>')
-      .join('');
-
-    modal.innerHTML =
-      '<div class="modal-title">✏️ 主管修改申請 <button class="modal-close" onclick="closeModal()">✕</button></div>' +
-      '<div class="alert alert-info" style="margin-bottom:12px">申請人：' + (m?.name||r.userId) + '・' + (m?.group||'') + '組</div>' +
-      '<div class="form-group"><label class="form-label">申請人（可更換）</label>' +
-      '<select class="form-control" id="editUserId">' + userOpts + '</select></div>' +
-      '<div class="form-row">' +
-        '<div class="form-group"><label class="form-label">開始日期</label>' +
-        '<input type="date" class="form-control" id="editStart" value="' + r.startDate + '"></div>' +
-        '<div class="form-group"><label class="form-label">結束日期</label>' +
-        '<input type="date" class="form-control" id="editEnd" value="' + r.endDate + '"></div>' +
-      '</div>' +
-      '<div class="form-group"><label class="form-label">假期類型</label>' +
-      '<select class="form-control" id="editType" onchange="document.getElementById('editPartnerWrap').style.display=this.value==='swap'?'':'none'">' +
-        '<option value="general"' + (r.type==='general'?' selected':'') + '>一般申請</option>' +
-        '<option value="swap"' + (r.type==='swap'?' selected':'') + '>對調申請</option>' +
-      '</select></div>' +
-      '<div class="form-group" id="editPartnerWrap" style="' + (r.type==='swap'?'':'display:none') + '">' +
-        '<label class="form-label">對調人員</label>' +
-        '<select class="form-control" id="editPartnerId">' + partnerOpts + '</select></div>' +
-      '<div class="form-group"><label class="form-label">狀態</label>' +
-        '<select class="form-control" id="editStatus">' + statusOptions + '</select></div>' +
-      '<div class="form-group"><label class="form-label">備註／修改原因</label>' +
-        '<input class="form-control" id="editNote" placeholder="說明修改原因（將記入異動歷程）"></div>' +
-      '<button class="btn btn-primary" style="margin-top:4px" onclick="adminSaveEdit('' + id + '')">✅ 儲存（主管權限，立即生效）</button>';
+function confirmSwap(id,confirm){
+  const app=state.applications.find(a=>a.id===id); if(!app) return;
+  if(confirm){
+    app.status='pending';
+    app.partnerConfirmed=true;
+    app.history.push({at:new Date().toISOString(),note:'對調人員已確認'});
+    alert('已確認對調，等待主管審核');
   } else {
-    modal.innerHTML =
-      '<div class="modal-title">修改申請 <button class="modal-close" onclick="closeModal()">✕</button></div>' +
-      '<div class="form-group"><label class="form-label">開始日期</label>' +
-        '<input type="date" class="form-control" id="editStart" value="' + r.startDate + '"></div>' +
-      '<div class="form-group"><label class="form-label">結束日期</label>' +
-        '<input type="date" class="form-control" id="editEnd" value="' + r.endDate + '"></div>' +
-      '<button class="btn btn-primary" onclick="saveEdit('' + id + '')">儲存修改</button>';
+    app.status='rejected';
+    app.history.push({at:new Date().toISOString(),note:'對調人員拒絕'});
+    alert('已拒絕對調申請');
   }
-  document.getElementById('modalOverlay').classList.add('open');
+  saveState();
+  renderRecords(recordFilter);
 }
 
-function saveEdit(id) {
-  const r = state.records.find(x => x.id === id);
-  if (!r) return;
-  const s = document.getElementById('editStart').value;
-  const e = document.getElementById('editEnd').value;
-  if (!s || !e || e < s) { showToast('日期有誤'); return; }
-  r.startDate = s; r.endDate = e;
-  r.days = countWorkdays(s, e); r.isLong = r.days >= 5;
-  r.status = r.type === 'swap' ? 'swap_modify_pending' : 'modified';
-  r.history.push({time: new Date().toISOString(), action: '修改日期為 ' + formatISO(s) + ' – ' + formatISO(e)});
-  save(); closeModal(); renderRecords(); renderCalendar();
-  showToast('已修改，請等待重新審核');
-}
-
-function adminSaveEdit(id) {
-  const r = state.records.find(x => x.id === id);
-  if (!r) return;
-  const s = document.getElementById('editStart').value;
-  const e = document.getElementById('editEnd').value;
-  if (!s || !e || e < s) { showToast('日期有誤'); return; }
-
-  const oldStart = r.startDate, oldEnd = r.endDate;
-  const oldStatus = r.status, oldUser = r.userId;
-
-  const newUser = document.getElementById('editUserId').value;
-  const newStatus = document.getElementById('editStatus').value;
-  const newType = document.getElementById('editType').value;
-  const newPartner = document.getElementById('editPartnerId') ? document.getElementById('editPartnerId').value : r.partnerId;
-  const note = document.getElementById('editNote').value.trim();
-
-  const changes = [];
-  if (oldUser !== newUser) {
-    const om = state.members.find(x=>x.id===oldUser);
-    const nm = state.members.find(x=>x.id===newUser);
-    changes.push('申請人：' + (om?.name||oldUser) + ' → ' + (nm?.name||newUser));
-  }
-  if (oldStart !== s || oldEnd !== e) changes.push('日期：' + formatISO(oldStart) + '–' + formatISO(oldEnd) + ' → ' + formatISO(s) + '–' + formatISO(e));
-  if (oldStatus !== newStatus) changes.push('狀態：' + oldStatus + ' → ' + newStatus);
-  if (note) changes.push('備註：' + note);
-
-  r.userId = newUser; r.startDate = s; r.endDate = e;
-  r.days = countWorkdays(s, e); r.isLong = r.days >= 5;
-  r.type = newType; r.status = newStatus;
-  if (newPartner) r.partnerId = newPartner;
-
-  r.history.push({time: new Date().toISOString(), action: '主管修改｜' + (changes.length ? changes.join('；') : '內容更新')});
-  save(); closeModal(); renderRecords(); renderCalendar();
-  if (state.currentAdminTab === 0) renderAdminReview(document.getElementById('adminTabContent'));
-  showToast('✅ 已更新，立即生效');
-
-}
-
-
-// ==================== GROUP VIEW ====================
-function switchGroup(g) {
-  state.currentGroup = g;
-  document.getElementById('grpA').classList.toggle('active', g === 'A');
-  document.getElementById('grpB').classList.toggle('active', g === 'B');
-  renderGroupList();
-}
-
-function renderGroupList() {
-  const members = state.members.filter(m => m.group === state.currentGroup)
-    .sort((a,b) => a.join.localeCompare(b.join));
-
-  document.getElementById('countA').textContent = state.members.filter(m=>m.group==='A').length;
-  document.getElementById('countB').textContent = state.members.filter(m=>m.group==='B').length;
-
-  const html = members.map(m => {
-    const leave = getMemberLeave(m);
-    const used = usedLeave(m.id);
-    const remain = leave - used;
-    const pct = leave > 0 ? Math.round((used/leave)*100) : 0;
-    const barClass = pct > 80 ? 'danger' : pct > 60 ? 'warning' : '';
-    return `<div class="member-row">
-      <div class="member-info">
-        <div class="member-name">${m.name} <span style="font-size:11px;color:var(--text3)">${m.id}</span></div>
-        <div class="member-sub">到職 ${formatISO(m.join)}</div>
-        <div class="progress-bar" style="width:120px;margin-top:4px">
-          <div class="progress-fill ${barClass}" style="width:${pct}%"></div>
-        </div>
-      </div>
-      <div class="member-leave">${remain}<span>/天</span><br><span>共${leave}天</span></div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('groupMemberList').innerHTML = html || '<div class="empty-state"><p>無組員</p></div>';
-}
-
-// ==================== CALENDAR ====================
-function calPrev() {
-  state.calMonth--;
-  if (state.calMonth < 1) { state.calMonth = 12; state.calYear--; }
-  renderCalendar();
-}
-function calNext() {
-  state.calMonth++;
-  if (state.calMonth > 12) { state.calMonth = 1; state.calYear++; }
-  renderCalendar();
-}
-
-function renderCalendar() {
-  const y = state.calYear, m = state.calMonth;
-  document.getElementById('calTitle').textContent = `${y} 年 ${m} 月`;
-  const grid = document.getElementById('calGrid');
-  const dows = ['日','一','二','三','四','五','六'];
-  let html = dows.map(d => `<div class="cal-dow">${d}</div>`).join('');
-
-  const firstDay = new Date(y, m-1, 1).getDay();
-  const daysInMonth = new Date(y, m, 0).getDate();
-  const today = new Date();
-
-  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr2 = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dateObj = new Date(dateStr2);
-    const isToday = toISO(today) === dateStr2;
-    const isWknd = isWeekend(dateObj);
-
-    // Get events for this day
-    const dayEvents = state.records.filter(r => {
-      if (r.status === 'cancelled' || r.status === 'rejected') return false;
-      return r.startDate <= dateStr2 && r.endDate >= dateStr2;
-    });
-
-    const eventHtml = dayEvents.slice(0,4).map(r => {
-      const mm = state.members.find(x => x.id === r.userId);
-      const name = mm ? mm.name : '?';
-      const cls = r.status === 'approved' ? 'approved' : 'pending';
-      return `<div class="cal-event ${cls}" title="${name}">${name}</div>`;
-    }).join('') + (dayEvents.length > 4 ? `<div class="cal-event" style="background:var(--surface2);color:var(--text3)">+${dayEvents.length-4}</div>` : '');
-
-    html += `<div class="cal-day${isToday?' today':''}${isWknd?' weekend':''}" onclick="showDayDetail('${dateStr2}')">
-      <div class="day-num">${d}</div>
-      <div class="cal-events">${eventHtml}</div>
-    </div>`;
-  }
-  grid.innerHTML = html;
-}
-
-function showDayDetail(dateStr2) {
-  const recs = state.records.filter(r => {
-    if (r.status === 'cancelled' || r.status === 'rejected') return false;
-    return r.startDate <= dateStr2 && r.endDate >= dateStr2;
+function checkExpiredSwaps(){
+  const now=new Date();
+  let changed=false;
+  state.applications.filter(a=>a.status==='swap_pending').forEach(a=>{
+    const diff=(now-new Date(a.appliedAt))/(1000*60*60*24);
+    if(diff>14){ a.status='swap_expired'; changed=true; }
   });
-  const detail = document.getElementById('calDayDetail');
-  if (!recs.length) { detail.style.display = 'none'; return; }
-  detail.style.display = '';
-  detail.innerHTML = `<div style="font-weight:600;margin-bottom:8px">${formatISO(dateStr2)} 特休人員（${recs.length}人）</div>` +
-    recs.map(r => {
-      const mm = state.members.find(x => x.id === r.userId);
-      return `<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)">
-        ${mm?.name || r.userId}（${mm?.group||''}組）${statusBadge(r.status)}
-      </div>`;
-    }).join('');
+  if(changed) saveState();
 }
 
-// ==================== ADMIN ====================
-function openAdmin() {
-  if (state.adminLoggedIn) {
-    showAdminPanel();
-    return;
-  }
-  const overlay = document.getElementById('adminOverlay');
-  overlay.style.display = 'block';
-  overlay.innerHTML = `
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px">
-      <div style="font-size:48px;margin-bottom:16px">🔐</div>
-      <h2 style="font-size:20px;font-weight:700;margin-bottom:8px">主管登入</h2>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:24px">請輸入管理員密碼</p>
-      <div style="width:100%;max-width:280px">
-        <input type="password" class="form-control" id="adminPwInput" placeholder="輸入密碼" style="margin-bottom:12px" onkeydown="if(event.key==='Enter')checkAdminPw()">
-        <button class="btn btn-primary" onclick="checkAdminPw()">登入</button>
-        <button class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="document.getElementById('adminOverlay').style.display='none'">取消</button>
-        <div id="pwError" style="margin-top:8px"></div>
-      </div>
-    </div>`;
+// ── GROUPS ──
+function renderGroups(){
+  document.getElementById('groupA').innerHTML=state.members.filter(m=>m.group==='A').map(m=>renderMemberCard(m)).join('');
+  document.getElementById('groupB').innerHTML=state.members.filter(m=>m.group==='B').map(m=>renderMemberCard(m)).join('');
 }
-
-function checkAdminPw() {
-  const pw = document.getElementById('adminPwInput').value;
-  if (pw === 'AF0713') {
-    state.adminLoggedIn = true;
-    showAdminPanel();
-  } else {
-    document.getElementById('pwError').innerHTML = '<div class="alert alert-danger">密碼錯誤</div>';
-  }
-}
-
-function showAdminPanel() {
-  const overlay = document.getElementById('adminOverlay');
-  overlay.style.display = 'block';
-  overlay.innerHTML = `
-    <div class="app-header">
-      <div>
-        <div style="font-size:17px;font-weight:700">🔐 主管後台</div>
-        <div class="header-sub">管理員模式</div>
-      </div>
-      <button class="admin-btn" onclick="closeAdmin()">✕ 退出</button>
+function renderMemberCard(m,isAdmin){
+  const total=getMemberLeave(m.id);
+  const used=usedLeave(m.id,new Date().getFullYear());
+  const remain=total-used;
+  const pct=total>0?Math.round(used/total*100):0;
+  return `<div class="member-card ${m.group==='B'?'b-group':''}">
+    <div class="member-name">${m.name}</div>
+    <div class="member-meta">#${m.id} ｜ 到職：${m.join}</div>
+    <div class="member-leave">
+      <span class="leave-pill">特休 ${total}天</span>
+      <span class="text-sm">已用 ${used} 剩 ${remain}</span>
     </div>
-    <div class="tabs" id="adminTabs">
-      <div class="tab active" onclick="showAdminTab(0,this)">審核</div>
-      <div class="tab" onclick="showAdminTab(1,this)">設定</div>
-      <div class="tab" onclick="showAdminTab(2,this)">KPI</div>
-      <div class="tab" onclick="showAdminTab(3,this)">匯出</div>
-      <div class="tab" onclick="showAdminTab(4,this)">成員</div>
-    </div>
-    <div style="padding:16px;overflow-y:auto;height:calc(100vh - 104px)">
-      <div id="adminTabContent"></div>
-    </div>`;
-  showAdminTab(0);
-}
-
-function showAdminTab(n, el) {
-  state.currentAdminTab = n;
-  if (el) {
-    document.querySelectorAll('#adminTabs .tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-  }
-  const content = document.getElementById('adminTabContent');
-  if (n === 0) renderAdminReview(content);
-  else if (n === 1) renderAdminSettings(content);
-  else if (n === 2) renderAdminKPI(content);
-  else if (n === 3) renderAdminExport(content);
-  else if (n === 4) renderAdminMembers(content);
-}
-
-function closeAdmin() {
-  document.getElementById('adminOverlay').style.display = 'none';
-}
-
-function renderAdminReview(container) {
-  const pending = state.records.filter(r => r.status === 'pending' || r.status === 'swap_pending' || r.status === 'modified' || r.status === 'swap_modify_pending');
-  const all = [...state.records].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
-
-  let html = `<div class="section-label">待審核（${pending.length}）</div>`;
-  if (!pending.length) html += '<div class="empty-state"><p>無待審核申請</p></div>';
-  else html += pending.map(r => renderRecord(r, true)).join('');
-
-  html += `<div class="section-label" style="margin-top:16px">所有申請（${all.length}）</div>`;
-  html += all.map(r => renderRecord(r, true)).join('') || '<div class="empty-state"><p>無紀錄</p></div>';
-
-  container.innerHTML = html;
-}
-
-function adminApprove(id) {
-  const r = state.records.find(x => x.id === id);
-  if (!r) return;
-  r.status = 'approved';
-  r.history.push({time: new Date().toISOString(), action: '主管核准'});
-  save();
-  showToast('已核准');
-  if (state.currentAdminTab === 0) renderAdminReview(document.getElementById('adminTabContent'));
-}
-
-function adminReject(id) {
-  const r = state.records.find(x => x.id === id);
-  if (!r) return;
-  r.status = 'rejected';
-  r.history.push({time: new Date().toISOString(), action: '主管退件'});
-  save();
-  showToast('已退件');
-  if (state.currentAdminTab === 0) renderAdminReview(document.getElementById('adminTabContent'));
-}
-
-function renderAdminSettings(container) {
-  container.innerHTML = `
-    <div class="card">
-      <div class="card-title"><div class="icon">🎨</div>主題設定</div>
-      <div class="chip-group">
-        <div class="chip" onclick="setTheme('#2d6a4f','#40916c','#d8f3dc',this)">🌿 森林綠</div>
-        <div class="chip" onclick="setTheme('#1d4e89','#2563ab','#dbe9fa',this)">🌊 海洋藍</div>
-        <div class="chip" onclick="setTheme('#6b21a8','#7c3aed','#ede9fe',this)">🌸 紫羅蘭</div>
-        <div class="chip" onclick="setTheme('#9a3412','#b45309','#fef3c7',this)">🍂 秋葉橙</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title"><div class="icon">⚙️</div>直接設定假期</div>
-      <div class="form-group">
-        <label class="form-label">員工（姓名或員編）</label>
-        <input class="form-control" id="adminSetUser" placeholder="輸入員工" oninput="adminLookupSetUser()">
-        <div id="adminSetUserInfo"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">開始日</label>
-          <input type="date" class="form-control" id="adminSetStart">
-        </div>
-        <div class="form-group">
-          <label class="form-label">結束日</label>
-          <input type="date" class="form-control" id="adminSetEnd">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">允許同假期長假人數上限</label>
-        <select class="form-control" id="adminForceAllow">
-          <option value="1">1人（預設）</option>
-          <option value="2">2人</option>
-          <option value="3">3人</option>
-          <option value="4">最多4人</option>
-        </select>
-      </div>
-      <button class="btn btn-primary" onclick="adminSetLeave()">強制設定假期</button>
-    </div>
-    <div class="card">
-      <div class="card-title"><div class="icon">🔀</div>期間組別調整（以天為單位）</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">指定某員工在特定日期區間內，將其假期紀錄的組別臨時改為另一組（按天計算）</div>
-      <div class="form-group">
-        <label class="form-label">員工（姓名或員編）</label>
-        <input class="form-control" id="groupDayUser" placeholder="輸入員工" oninput="adminLookupGroupDayUser()">
-        <div id="groupDayUserInfo"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">區間開始日</label>
-          <input type="date" class="form-control" id="groupDayStart">
-        </div>
-        <div class="form-group">
-          <label class="form-label">區間結束日</label>
-          <input type="date" class="form-control" id="groupDayEnd">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">此區間視為哪一組</label>
-        <select class="form-control" id="groupDayTarget">
-          <option value="A">A 組</option>
-          <option value="B">B 組</option>
-        </select>
-      </div>
-      <div class="hint" style="margin-bottom:8px">※ 此設定僅影響衝突判斷，不會永久變更組員組別</div>
-      <button class="btn btn-primary" onclick="adminApplyGroupDay()">套用期間組別</button>
-      <div id="groupDayResult" style="margin-top:8px"></div>
-    </div>`;
-}
-
-let adminSetUserId = null;
-function adminLookupSetUser() {
-  const q = document.getElementById('adminSetUser').value.trim();
-  const m = getMember(q);
-  document.getElementById('adminSetUserInfo').innerHTML = m
-    ? `<div class="alert alert-success">✓ ${m.name}（${m.id}）・${m.group}組</div>`
-    : (q ? '<div class="alert alert-warning">找不到員工</div>' : '');
-  adminSetUserId = m ? m.id : null;
-}
-
-let groupDayUserId = null;
-function adminLookupGroupDayUser() {
-  const q = document.getElementById('groupDayUser').value.trim();
-  const m = getMember(q);
-  document.getElementById('groupDayUserInfo').innerHTML = m
-    ? '<div class="alert alert-success">✓ ' + m.name + '（' + m.id + '）・' + m.group + '組</div>'
-    : (q ? '<div class="alert alert-warning">找不到員工</div>' : '');
-  groupDayUserId = m ? m.id : null;
-}
-
-function adminApplyGroupDay() {
-  if (!groupDayUserId) { showToast('請選擇員工'); return; }
-  const s = document.getElementById('groupDayStart').value;
-  const e = document.getElementById('groupDayEnd').value;
-  const targetGroup = document.getElementById('groupDayTarget').value;
-  if (!s || !e || e < s) { showToast('請填寫正確日期區間'); return; }
-
-  const m = state.members.find(x => x.id === groupDayUserId);
-  if (!m) return;
-
-  // 找出此員工在指定區間內有哪些假期紀錄與此區間重疊
-  const affected = state.records.filter(r => {
-    if (r.userId !== groupDayUserId) return false;
-    if (r.status === 'cancelled' || r.status === 'rejected') return false;
-    return datesOverlap(s, e, r.startDate, r.endDate);
-  });
-
-  if (affected.length === 0) {
-    document.getElementById('groupDayResult').innerHTML =
-      '<div class="alert alert-warning">此區間找不到該員工的假期紀錄，無可調整項目</div>';
-    return;
-  }
-
-  // 計算實際受影響工作天數
-  let totalDays = 0;
-  affected.forEach(r => {
-    // 計算交集工作日
-    const overlapStart = r.startDate > s ? r.startDate : s;
-    const overlapEnd   = r.endDate < e ? r.endDate : e;
-    totalDays += countWorkdays(overlapStart, overlapEnd);
-    // 在紀錄上附加期間組別覆蓋資訊
-    if (!r.groupDayOverrides) r.groupDayOverrides = [];
-    r.groupDayOverrides.push({
-      from: s, to: e, group: targetGroup,
-      setAt: new Date().toISOString(),
-      setBy: '管理員'
-    });
-    r.history.push({
-      time: new Date().toISOString(),
-      action: '管理員將 ' + s + ' – ' + e + ' 期間組別調整為 ' + targetGroup + ' 組'
-    });
-  });
-
-  save();
-  showToast('已套用：' + m.name + ' 在 ' + formatISO(s) + '–' + formatISO(e) + ' 視為 ' + targetGroup + ' 組');
-  document.getElementById('groupDayResult').innerHTML =
-    '<div class="alert alert-success">✅ 共影響 ' + affected.length + ' 筆假期、' + totalDays + ' 個工作日<br>' +
-    '已在相關紀錄中加註期間組別（' + targetGroup + ' 組），並記錄異動歷程。</div>';
-  renderAdminSettings(document.getElementById('adminTabContent'));
-}
-
-function adminSetLeave() {
-  if (!adminSetUserId) { showToast('請先選擇員工'); return; }
-  const s = document.getElementById('adminSetStart').value;
-  const e = document.getElementById('adminSetEnd').value;
-  if (!s || !e || e < s) { showToast('日期有誤'); return; }
-  const maxOverlap = parseInt(document.getElementById('adminForceAllow').value);
-  const days = countWorkdays(s, e);
-  const rec = {
-    id: 'A' + Date.now(),
-    userId: adminSetUserId,
-    type: 'general',
-    startDate: s,
-    endDate: e,
-    days,
-    isLong: days >= 5,
-    status: 'approved',
-    history: [{time: new Date().toISOString(), action: '管理員直接設定'}],
-    createdAt: new Date().toISOString(),
-    adminMaxOverlap: maxOverlap
-  };
-  state.records.push(rec);
-  save();
-  showToast('假期已直接設定');
-  renderCalendar();
-}
-
-function renderAdminKPI(container) {
-  const total = state.records.length;
-  const approved = state.records.filter(r => r.status === 'approved').length;
-  const rejected = state.records.filter(r => r.status === 'rejected').length;
-  const pending = state.records.filter(r => r.status === 'pending' || r.status === 'swap_pending').length;
-  const swaps = state.records.filter(r => r.type === 'swap').length;
-  const swapApproved = state.records.filter(r => r.type === 'swap' && r.status === 'approved').length;
-  const longLeave = state.records.filter(r => r.isLong && r.status === 'approved').length;
-  const overdue = state.records.filter(r => r.status === 'overdue').length;
-
-  const approvalRate = total ? Math.round(approved/total*100) : 0;
-  const swapRate = swaps ? Math.round(swapApproved/swaps*100) : 0;
-  const longRate = approved ? Math.round(longLeave/approved*100) : 0;
-  const overdueRate = swaps ? Math.round(overdue/swaps*100) : 0;
-
-  const memberCount = state.members.length;
-  const activeUsers = new Set(state.records.filter(r => r.status==='approved').map(r=>r.userId)).size;
-  const applyRate = memberCount ? Math.round(activeUsers/memberCount*100) : 0;
-
-  container.innerHTML = `
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">總申請數</div></div>
-      <div class="stat-card"><div class="stat-num">${approved}</div><div class="stat-label">已核准</div></div>
-      <div class="stat-card"><div class="stat-num">${pending}</div><div class="stat-label">待審核</div></div>
-      <div class="stat-card"><div class="stat-num">${rejected}</div><div class="stat-label">已退件</div></div>
-    </div>
-    <div class="card">
-      <div class="card-title"><div class="icon">📊</div>KPI 指標</div>
-      ${kpiBar('整體特休申請率', applyRate)}
-      ${kpiBar('審核通過率', approvalRate)}
-      ${kpiBar('對調成功率', swapRate)}
-      ${kpiBar('長假使用率', longRate)}
-      ${kpiBar('對調逾期率', overdueRate, true)}
-    </div>
-    <div class="card">
-      <div class="card-title"><div class="icon">👤</div>個人申請統計</div>
-      ${state.members.map(m => {
-        const mRecs = state.records.filter(r => r.userId === m.id && r.status === 'approved');
-        const mDays = mRecs.reduce((s,r) => s+r.days, 0);
-        const leave = getMemberLeave(m);
-        const pct = leave ? Math.round(mDays/leave*100) : 0;
-        return `<div class="kpi-bar">
-          <div class="kpi-bar-label">${m.name}</div>
-          <div class="kpi-bar-track"><div class="kpi-bar-fill" style="width:${pct}%"></div></div>
-          <div class="kpi-bar-val">${pct}%</div>
-        </div>`;
-      }).join('')}
-    </div>`;
-}
-
-function kpiBar(label, val, inverse) {
-  const color = inverse ? (val > 20 ? 'var(--red)' : 'var(--accent)') : (val < 30 ? 'var(--amber)' : 'var(--accent)');
-  return `<div class="kpi-bar">
-    <div class="kpi-bar-label">${label}</div>
-    <div class="kpi-bar-track"><div class="kpi-bar-fill" style="width:${val}%;background:${color}"></div></div>
-    <div class="kpi-bar-val">${val}%</div>
+    <div class="leave-bar-wrap"><div class="leave-bar" style="width:${pct}%"></div></div>
+    ${isAdmin?`<div style="display:flex;gap:6px;margin-top:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="openEditMember('${m.id}')">✏️ 修改</button>
+      <button class="btn btn-sm" style="background:var(--surface2);color:var(--text2);" onclick="switchMemberGroup('${m.id}')">↔️ 切組</button>
+    </div>`:''}
   </div>`;
 }
 
-function renderAdminExport(container) {
-  container.innerHTML = `
-    <div class="card">
-      <div class="card-title"><div class="icon">📤</div>匯出功能</div>
-      <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" onclick="exportExcel()">📊 匯出 Excel（所有申請）</button>
-      <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" onclick="exportMonthly()">📅 匯出每月特休總覽</button>
-      <button class="btn btn-secondary" style="width:100%" onclick="showQR(container)">📱 產生 QR Code</button>
-    </div>
-    <div id="qrContainer" style="text-align:center;margin-top:12px"></div>`;
+// ── CALENDAR ──
+// ── FIX 3: calYear/calMonth 是本機 UI 狀態，不寫入 Firebase
+let calYear = (()=>{ try{ const s=localStorage.getItem('leaveSystemState'); if(s){ const p=JSON.parse(s); return p.calYear||new Date().getFullYear(); } }catch(e){} return new Date().getFullYear(); })();
+let calMonth = (()=>{ try{ const s=localStorage.getItem('leaveSystemState'); if(s){ const p=JSON.parse(s); return p.calMonth!=null?p.calMonth:new Date().getMonth(); } }catch(e){} return new Date().getMonth(); })();
+
+function calPrev(){
+  calMonth--;
+  if(calMonth<0){calMonth=11;calYear--;}
+  state.calYear=calYear; state.calMonth=calMonth;
+  saveCalendarLocal(); // ── FIX 2: 只存本機，不推 Firebase
+  renderCalendar();
+}
+function calNext(){
+  calMonth++;
+  if(calMonth>11){calMonth=0;calYear++;}
+  state.calYear=calYear; state.calMonth=calMonth;
+  saveCalendarLocal(); // ── FIX 2: 只存本機，不推 Firebase
+  renderCalendar();
 }
 
-function exportExcel() {
-  if (typeof XLSX === 'undefined') { showToast('載入中，請稍後再試'); return; }
-  const statusLabel = {
-    approved:'已完成', pending:'待審核', swap_pending:'對調待確認',
-    overdue:'對調逾期', rejected:'已退件', modified:'已修改',
-    swap_modify_pending:'對調修改待確認', cancelled:'已取消'
-  };
-  const sorted = [...state.records].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
-  const rows = sorted.map(r => {
-    const m = state.members.find(x => x.id === r.userId);
-    const p = r.partnerId ? state.members.find(x => x.id === r.partnerId) : null;
-    const lastAction = r.history && r.history.length ? r.history[r.history.length-1] : null;
-    return {
-      '員工編號': r.userId,
-      '姓名': m?.name || '',
-      '組別': m?.group || '',
-      '類型': r.type === 'swap' ? '對調' : '一般',
-      '假期長短': r.isLong ? '長假(≥5天)' : '短假',
-      '開始日': r.startDate,
-      '結束日': r.endDate,
-      '天數': r.days,
-      '狀態': statusLabel[r.status] || r.status,
-      '對調人員': p?.name || '',
-      '對調員編': p?.id || '',
-      '申請時間': formatDateTime(r.createdAt),
-      '最後異動時間': lastAction ? formatDateTime(lastAction.time) : '',
-      '最後異動內容': lastAction ? lastAction.action : ''
-    };
-  });
-  const ws = XLSX.utils.json_to_sheet(rows);
-  // 設定欄寬
-  ws['!cols'] = [
-    {wch:10},{wch:8},{wch:6},{wch:6},{wch:10},
-    {wch:12},{wch:12},{wch:6},{wch:14},{wch:8},{wch:10},
-    {wch:18},{wch:18},{wch:20}
-  ];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '特休申請');
-  XLSX.writeFile(wb, '特休申請紀錄.xlsx');
-  showToast('Excel 匯出完成');
-}
-
-function exportMonthly() {
-  if (typeof XLSX === 'undefined') { showToast('載入中，請稍後再試'); return; }
-  const wb = XLSX.utils.book_new();
-  const months = {};
-  state.records.filter(r => r.status !== 'cancelled' && r.status !== 'rejected').forEach(r => {
-    const s = new Date(r.startDate);
-    const key = `${s.getFullYear()}-${String(s.getMonth()+1).padStart(2,'0')}`;
-    if (!months[key]) months[key] = [];
-    months[key].push(r);
-  });
-  const statusLabel2 = {
-    approved:'已完成', pending:'待審核', swap_pending:'對調待確認',
-    overdue:'對調逾期', rejected:'已退件', modified:'已修改',
-    swap_modify_pending:'對調修改待確認', cancelled:'已取消'
-  };
-  Object.entries(months).sort().forEach(([ym, recs]) => {
-    const rows = recs.sort((a,b) => a.startDate.localeCompare(b.startDate)).map(r => {
-      const m = state.members.find(x => x.id === r.userId);
-      const p = r.partnerId ? state.members.find(x => x.id === r.partnerId) : null;
-      return {
-        '姓名': m?.name||'',
-        '組別': m?.group||'',
-        '類型': r.type==='swap'?'對調':'一般',
-        '開始日': r.startDate,
-        '結束日': r.endDate,
-        '天數': r.days,
-        '狀態': statusLabel2[r.status] || r.status,
-        '對調人員': p?.name||'',
-        '申請時間': formatDateTime(r.createdAt)
-      };
+function renderCalendar(){
+  const monthNames=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('calTitle').textContent=`${calYear}年 ${monthNames[calMonth]}`;
+  document.getElementById('calMonthSummaryTitle').textContent=`${calYear}年${monthNames[calMonth]} 特休總覽`;
+  const first=new Date(calYear,calMonth,1);
+  const last=new Date(calYear,calMonth+1,0);
+  const startDow=first.getDay();
+  const dows=['日','一','二','三','四','五','六'];
+  let html=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<startDow;i++) html+=`<div class="cal-day other-month"></div>`;
+  const today=new Date(); today.setHours(0,0,0,0);
+  for(let day=1;day<=last.getDate();day++){
+    const d=new Date(calYear,calMonth,day);
+    const isToday=fmtDate(d)===fmtDate(today);
+    const isWknd=d.getDay()===0||d.getDay()===6;
+    const appsThisDay=state.applications.filter(a=>{
+      if(!['done','pending'].includes(a.status)) return false;
+      const as=parseDate(a.startDate),ae=parseDate(a.endDate);
+      return d>=as&&d<=ae;
     });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{wch:8},{wch:6},{wch:6},{wch:12},{wch:12},{wch:6},{wch:14},{wch:8},{wch:18}];
-    XLSX.utils.book_append_sheet(wb, ws, ym);
-  });
-  XLSX.writeFile(wb, '每月特休總覽.xlsx');
-  showToast('每月總覽已匯出');
+    const evHtml=appsThisDay.slice(0,3).map(a=>`<div class="cal-event ${a.group==='A'?'a-ev':'b-ev'}">${a.applicantName}</div>`).join('');
+    html+=`<div class="cal-day ${isToday?'today':''} ${isWknd?'weekend':''}">
+      <div class="day-num">${day}</div>
+      <div class="cal-events">${evHtml}${appsThisDay.length>3?`<div class="text-sm">+${appsThisDay.length-3}</div>`:''}</div>
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML=html;
+  renderMonthSummary();
 }
 
-function showQR() {
-  const url = window.location.href;
-  const cont = document.getElementById('qrContainer') || document.body;
-  cont.innerHTML = `<canvas id="qrCanvas2" width="200" height="200" style="display:block;margin:0 auto"></canvas><p class="hint" style="margin-top:8px">${url}</p>`;
-  // Simple QR code simulation (draw URL as text in box)
-  const canvas = document.getElementById('qrCanvas2');
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0,0,200,200);
-  ctx.fillStyle = '#000';
-  ctx.font = '10px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('📱 掃描開啟系統', 100, 100);
-  ctx.font = '8px monospace';
-  ctx.fillText(url.substring(0,30), 100, 115);
-  showToast('QR Code 已產生');
+function renderMonthSummary(){
+  const monthApps=state.applications.filter(a=>{
+    const as=parseDate(a.startDate), ae=parseDate(a.endDate);
+    const mStart=new Date(calYear,calMonth,1), mEnd=new Date(calYear,calMonth+1,0);
+    return as<=mEnd && ae>=mStart;
+  }).sort((a,b)=>a.startDate.localeCompare(b.startDate));
+  if(!monthApps.length){document.getElementById('calMonthSummary').innerHTML='<div class="text-muted">本月無特休申請</div>';return;}
+  document.getElementById('calMonthSummary').innerHTML=`
+    <table><thead><tr><th>姓名</th><th>組別</th><th>日期</th><th>天數</th><th>狀態</th></tr></thead>
+    <tbody>${monthApps.map(a=>`<tr>
+      <td>${a.applicantName}</td>
+      <td><span class="badge badge-${(a.group||'A').toLowerCase()}">${a.group}</span></td>
+      <td>${a.startDate}~${a.endDate}</td>
+      <td>${a.workdays}</td>
+      <td><span class="badge ${a.status==='done'?'badge-green':a.status==='pending'?'badge-yellow':'badge-red'}">${statusLabel(a.status)}</span></td>
+    </tr>`).join('')}</tbody></table>`;
 }
 
-function renderAdminMembers(container) {
-  const sorted = [...state.members].sort((a,b) => a.group.localeCompare(b.group) || a.join.localeCompare(b.join));
-  container.innerHTML = `
-    <div class="card">
-      <div class="card-title"><div class="icon">➕</div>新增組員</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">員工編號</label>
-          <input class="form-control" id="newEmpId" placeholder="例：17500">
-        </div>
-        <div class="form-group">
-          <label class="form-label">姓名</label>
-          <input class="form-control" id="newEmpName" placeholder="姓名">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">到職日</label>
-          <input type="date" class="form-control" id="newEmpJoin">
-        </div>
-        <div class="form-group">
-          <label class="form-label">組別</label>
-          <select class="form-control" id="newEmpGroup">
-            <option value="A">A 組</option>
-            <option value="B">B 組</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">手動特休天數（空白=自動計算）</label>
-        <input class="form-control" id="newEmpLeave" placeholder="留空自動計算">
-      </div>
-      <button class="btn btn-primary" onclick="addMember()">新增組員</button>
-    </div>
-    <div class="section-label">現有成員（${state.members.length}人）</div>
-    ${sorted.map(m => {
-      const leave = getMemberLeave(m);
-      const used = usedLeave(m.id);
-      return `<div class="record-card" id="memberRow_${m.id}">
-        <div class="record-header" style="align-items:center">
-          <div>
-            <div class="record-name">${m.name} <span style="font-size:11px;color:var(--text3);font-weight:400">${m.id}</span>
-              <span class="badge ${m.group==='A'?'badge-success':'badge-info'}" style="margin-left:4px">${m.group}組</span>
-            </div>
-            <div class="record-meta">到職 ${formatISO(m.join)} ・ 特休 ${leave} 天・已用 ${used} 天</div>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
-            <button class="btn btn-sm" style="background:${m.group==='A'?'var(--accent-light)':'var(--blue-light)'};color:${m.group==='A'?'var(--accent)':'var(--blue)'};border:1px solid ${m.group==='A'?'var(--accent)':'var(--blue)'}" onclick="quickSwitchGroup('${m.id}')" title="點擊切換組別">
-              ${m.group}組 ⇄
-            </button>
-            <button class="btn btn-sm btn-outline" onclick="openEditMember('${m.id}')">✏️ 修改</button>
-            <button class="btn btn-sm btn-danger" onclick="removeMember('${m.id}')">移除</button>
-          </div>
-        </div>
-      </div>`;
-    }).join('')}`;
+// ── ADMIN ──
+let adminLoggedIn=false;
+function openAdmin(){
+  if(adminLoggedIn){renderAdminPanel();return;}
+  document.getElementById('app').style.display='none';
+  document.getElementById('adminLoginWrap').style.display='flex';
 }
-
-function openEditMember(id) {
-  const m = state.members.find(x => x.id === id);
-  if (!m) return;
-  const leave = getMemberLeave(m);
-  const modal = document.getElementById('modalContent');
-  modal.innerHTML = `
-    <div class="modal-title">✏️ 修改組員資料 <button class="modal-close" onclick="closeModal()">✕</button></div>
-    <div class="alert alert-info" style="margin-bottom:12px">員工編號：${m.id}</div>
-    <div class="form-group">
-      <label class="form-label">姓名</label>
-      <input class="form-control" id="editMName" value="${m.name}">
+function getAdminPassword(){ return state.adminPassword || 'AF0713'; }
+function checkAdminPw(){
+  const pw=document.getElementById('adminPwInput').value;
+  if(pw===getAdminPassword()){
+    adminLoggedIn=true;
+    document.getElementById('adminPwInput').value='';
+    document.getElementById('adminPwErr').style.display='none';
+    document.getElementById('adminLoginWrap').style.display='none';
+    renderAdminPanel();
+  } else {
+    document.getElementById('adminPwErr').style.display='block';
+  }
+}
+function changeAdminPassword(){
+  const cur=document.getElementById('pwCurrent').value;
+  const nw=document.getElementById('pwNew').value;
+  const cf=document.getElementById('pwConfirm').value;
+  const msgEl=document.getElementById('pwMsg');
+  if(cur!==getAdminPassword()){msgEl.innerHTML='<div class="alert alert-err">目前密碼錯誤</div>';return;}
+  if(nw.length<4){msgEl.innerHTML='<div class="alert alert-err">新密碼至少需要4位</div>';return;}
+  if(nw!==cf){msgEl.innerHTML='<div class="alert alert-err">兩次輸入的新密碼不一致</div>';return;}
+  state.adminPassword=nw;
+  saveState();
+  msgEl.innerHTML='<div class="alert alert-ok">✓ 密碼已成功變更</div>';
+  document.getElementById('pwCurrent').value='';
+  document.getElementById('pwNew').value='';
+  document.getElementById('pwConfirm').value='';
+}
+function closeAdminLogin(){
+  document.getElementById('adminLoginWrap').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.querySelectorAll('#tabBar .tab-item').forEach(t=>{t.classList.remove('active');if(t.dataset.tab==='apply')t.classList.add('active');});
+}
+function renderAdminPanel(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('adminPanel').style.display='block';
+  renderAdminKpiCards();
+  renderAdminRecords('all');
+  renderAdminPending();
+  renderAdminMembers();
+  renderKPI();
+}
+function closeAdmin(){
+  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+function switchAdminTab(tab,el){
+  document.querySelectorAll('#adminTabBar .tab-item').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#adminPanel .panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('atab-'+tab).classList.add('active');
+}
+function renderAdminKpiCards(){
+  const total=state.applications.length;
+  const done=state.applications.filter(a=>a.status==='done').length;
+  const pending=state.applications.filter(a=>a.status==='pending'||a.status==='swap_pending').length;
+  document.getElementById('adminKpiCards').innerHTML=`
+    <div class="kpi-card"><div class="kpi-val">${total}</div><div class="kpi-label">總申請數</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--orange)">${pending}</div><div class="kpi-label">待審核</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--green)">${done}</div><div class="kpi-label">已完成</div></div>`;
+}
+function renderAdminRecords(filter){
+  let apps=[...state.applications].sort((a,b)=>b.appliedAt.localeCompare(a.appliedAt));
+  if(filter!=='all') apps=apps.filter(a=>a.status===filter);
+  document.getElementById('adminRecordsList').innerHTML=apps.length
+    ? apps.map(a=>renderRecordItem(a,true)).join('')
+    : '<div class="text-muted" style="padding:20px;text-align:center;">無記錄</div>';
+}
+let adminRecordFilter2='all';
+function filterAdminRecords(f,el){
+  adminRecordFilter2=f;
+  document.querySelectorAll('#adminRecordFilter .filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderAdminRecords(f);
+}
+function renderAdminPending(){
+  const apps=state.applications.filter(a=>a.status==='pending'||a.status==='swap_pending');
+  document.getElementById('adminPendingList').innerHTML=apps.length
+    ? apps.map(a=>renderRecordItem(a,true)).join('')
+    : '<div class="text-muted" style="padding:20px;text-align:center;">暫無待審核申請 ✓</div>';
+}
+function approveApp(id,status){
+  const app=state.applications.find(a=>a.id===id); if(!app) return;
+  app.status=status;
+  app.history.push({at:new Date().toISOString(),note:status==='done'?'主管核准':'主管退件'});
+  saveState();
+  renderAdminRecords(adminRecordFilter2);
+  renderAdminPending();
+  renderAdminKpiCards();
+  renderRecords(recordFilter);
+  renderCalendar();
+}
+function openAdminEdit(id){
+  const app=state.applications.find(a=>a.id===id); if(!app) return;
+  document.getElementById('adminEditContent').innerHTML=`
+    <div class="form-row"><label>申請人</label>
+      <select id="editApplicant">${state.members.map(m=>`<option value="${m.id}" ${m.id===app.applicantId?'selected':''}>${m.name}（${m.group}組）</option>`).join('')}</select>
     </div>
-    <div class="form-group">
-      <label class="form-label">到職日</label>
-      <input type="date" class="form-control" id="editMJoin" value="${m.join}">
+    <div class="form-grid">
+      <div class="form-row"><label>開始日期</label><input type="date" id="editStart" value="${app.startDate}"></div>
+      <div class="form-row"><label>結束日期</label><input type="date" id="editEnd" value="${app.endDate}"></div>
     </div>
-    <div class="form-group">
-      <label class="form-label">組別</label>
-      <select class="form-control" id="editMGroup">
-        <option value="A" ${m.group==='A'?'selected':''}>A 組</option>
-        <option value="B" ${m.group==='B'?'selected':''}>B 組</option>
+    <div class="form-row"><label>假期類型</label>
+      <select id="editType"><option value="normal" ${app.type==='normal'?'selected':''}>一般</option><option value="swap" ${app.type==='swap'?'selected':''}>對調</option></select>
+    </div>
+    ${app.type==='swap'?`<div class="form-row"><label>對調人員</label>
+      <select id="editPartner">${state.members.map(m=>`<option value="${m.id}" ${m.id===app.partnerId?'selected':''}>${m.name}（${m.group}組）</option>`).join('')}</select>
+    </div>`:''}
+    <div class="form-row"><label>狀態</label>
+      <select id="editStatus">
+        <option value="pending" ${app.status==='pending'?'selected':''}>待審核</option>
+        <option value="done" ${app.status==='done'?'selected':''}>已完成</option>
+        <option value="rejected" ${app.status==='rejected'?'selected':''}>已退件</option>
+        <option value="swap_pending" ${app.status==='swap_pending'?'selected':''}>對調待確認</option>
       </select>
     </div>
-    <div class="form-group">
-      <label class="form-label">手動特休天數（目前自動計算：${calcLeave(m.join, new Date(), null)} 天）</label>
-      <input class="form-control" id="editMLeave" value="${m.manualLeave ?? ''}" placeholder="留空=自動計算">
-    </div>
-    <div class="form-group">
-      <label class="form-label">員工編號（可修改）</label>
-      <input class="form-control" id="editMId" value="${m.id}">
-    </div>
-    <button class="btn btn-primary" style="margin-top:4px" onclick="saveEditMember('${m.id}')">儲存變更</button>
-  `;
-  document.getElementById('modalOverlay').classList.add('open');
+    <div class="form-row"><label>備註/修改原因</label><textarea id="editNote" rows="2">${app.note||''}</textarea></div>
+    <button class="btn btn-primary btn-full mt-12" onclick="saveAdminEdit('${id}')">儲存</button>`;
+  document.getElementById('adminEditOverlay').classList.add('active');
 }
-
-function saveEditMember(oldId) {
-  const m = state.members.find(x => x.id === oldId);
-  if (!m) return;
-  const newId   = document.getElementById('editMId').value.trim();
-  const newName = document.getElementById('editMName').value.trim();
-  const newJoin = document.getElementById('editMJoin').value;
-  const newGroup= document.getElementById('editMGroup').value;
-  const newLeave= document.getElementById('editMLeave').value.trim();
-
-  if (!newName || !newJoin || !newId) { showToast('姓名、員編、到職日不可空白'); return; }
-  if (newId !== oldId && state.members.find(x => x.id === newId)) { showToast('員工編號已存在'); return; }
-
-  // Update records that reference this member if ID changed
-  if (newId !== oldId) {
-    state.records.forEach(r => {
-      if (r.userId === oldId) r.userId = newId;
-      if (r.partnerId === oldId) r.partnerId = newId;
-    });
+function saveAdminEdit(id){
+  const app=state.applications.find(a=>a.id===id); if(!app) return;
+  const newApplicantId=document.getElementById('editApplicant').value;
+  const newMember=getMember(newApplicantId);
+  app.applicantId=newApplicantId; app.applicantName=newMember.name; app.group=newMember.group;
+  app.startDate=document.getElementById('editStart').value;
+  app.endDate=document.getElementById('editEnd').value;
+  app.workdays=countWorkdays(parseDate(app.startDate),parseDate(app.endDate));
+  app.type=document.getElementById('editType').value;
+  if(app.type==='swap'&&document.getElementById('editPartner')){
+    app.partnerId=document.getElementById('editPartner').value;
+    app.partnerName=getMember(app.partnerId)?.name||'';
   }
-
-  m.id      = newId;
-  m.name    = newName;
-  m.join    = newJoin;
-  m.group   = newGroup;
-  m.manualLeave = newLeave !== '' ? parseInt(newLeave) : null;
-
-  save();
-  closeModal();
-  showToast(`✅ ${newName} 資料已更新`);
-  renderGroupList();
-  renderAdminMembers(document.getElementById('adminTabContent'));
-}
-
-function quickSwitchGroup(id) {
-  const m = state.members.find(x => x.id === id);
-  if (!m) return;
-  const oldGroup = m.group;
-  m.group = m.group === 'A' ? 'B' : 'A';
-  save();
-  showToast(`✅ ${m.name} 已從 ${oldGroup}組 切換至 ${m.group}組`);
-  renderGroupList();
-  renderAdminMembers(document.getElementById('adminTabContent'));
-}
-
-function addMember() {
-  const id = document.getElementById('newEmpId').value.trim();
-  const name = document.getElementById('newEmpName').value.trim();
-  const join = document.getElementById('newEmpJoin').value;
-  const group = document.getElementById('newEmpGroup').value;
-  const manualLeave = document.getElementById('newEmpLeave').value.trim();
-
-  if (!id || !name || !join) { showToast('請填寫完整資訊'); return; }
-  if (state.members.find(m => m.id === id)) { showToast('員工編號已存在'); return; }
-
-  state.members.push({id, name, join, group, manualLeave: manualLeave || null});
-  save();
-  showToast(`已新增 ${name}`);
-  renderGroupList();
-  if (state.currentAdminTab === 4) renderAdminMembers(document.getElementById('adminTabContent'));
-}
-
-function removeMember(id) {
-  if (!confirm('確定移除此組員？')) return;
-  state.members = state.members.filter(m => m.id !== id);
-  save();
-  showToast('已移除組員');
-  renderGroupList();
-  if (state.currentAdminTab === 4) renderAdminMembers(document.getElementById('adminTabContent'));
-}
-
-// ==================== THEME ====================
-function setTheme(accent, accent2, accentLight, el) {
-  document.documentElement.style.setProperty('--accent', accent);
-  document.documentElement.style.setProperty('--accent2', accent2);
-  document.documentElement.style.setProperty('--accent-light', accentLight);
-  state.theme = {accent, accent2, accentLight};
-  save();
-  if (el) {
-    document.querySelectorAll('.chip-group .chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-  }
-  showToast('主題已更新');
-}
-
-function applyTheme() {
-  if (state.theme) {
-    document.documentElement.style.setProperty('--accent', state.theme.accent);
-    document.documentElement.style.setProperty('--accent2', state.theme.accent2);
-    document.documentElement.style.setProperty('--accent-light', state.theme.accentLight);
-  }
-}
-
-// ==================== TABS ====================
-function showTab(n) {
-  document.querySelectorAll('.page').forEach((p,i) => p.classList.toggle('active', i === n));
-  document.querySelectorAll('#mainTabs .tab').forEach((t,i) => t.classList.toggle('active', i === n));
-  if (n === 1) renderRecords();
-  if (n === 2) renderGroupList();
-  if (n === 3) renderCalendar();
-}
-
-// ==================== MODAL ====================
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
-}
-document.getElementById('modalOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-
-// ==================== TOAST ====================
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 3000);
-}
-
-// ==================== INIT ====================
-function init() {
-  load();
-  applyTheme();
-
-  const today = new Date();
-  document.getElementById('todayLabel').textContent = `${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()} ・ 今日`;
-
-  state.calYear = today.getFullYear();
-  state.calMonth = today.getMonth() + 1;
-
-  // Set date input limits
-  const todayStr = toISO(today);
-  const maxDate = toISO(addMonths(today, 8));
-  ['genStartDate','genEndDate'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.min = todayStr; el.max = maxDate; }
-  });
-  // swapMyStart/swapMyEnd removed
-
-  renderGroupList();
+  app.status=document.getElementById('editStatus').value;
+  const note=document.getElementById('editNote').value;
+  if(note) app.note=note;
+  app.history.push({at:new Date().toISOString(),note:'主管修改：'+note});
+  saveState();
+  closeOverlay('adminEditOverlay');
+  renderAdminRecords(adminRecordFilter2);
+  renderAdminPending();
   renderCalendar();
-  renderRecords();
+  alert('已儲存修改');
+}
+function renderAdminMembers(){
+  document.getElementById('adminMemberList').innerHTML=`<div class="grid-2">${state.members.map(m=>renderMemberCard(m,true)).join('')}</div>`;
+}
+function openEditMember(id){
+  const m=getMember(id); if(!m) return;
+  document.getElementById('editMemberContent').innerHTML=`
+    <div class="form-row"><label>姓名</label><input type="text" id="emName" value="${m.name}"></div>
+    <div class="form-row"><label>到職日</label><input type="date" id="emJoin" value="${m.join.replace(/\//g,'-')}"></div>
+    <div class="form-row"><label>組別</label>
+      <select id="emGroup"><option value="A" ${m.group==='A'?'selected':''}>A組</option><option value="B" ${m.group==='B'?'selected':''}>B組</option></select>
+    </div>
+    <div class="form-row"><label>自訂特休（留空=自動）</label><input type="number" id="emLeave" value="${m.customLeave!=null?m.customLeave:''}"></div>
+    <button class="btn btn-primary btn-full mt-12" onclick="saveEditMember('${id}')">儲存</button>`;
+  document.getElementById('editMemberOverlay').classList.add('active');
+}
+function saveEditMember(id){
+  const m=getMember(id); if(!m) return;
+  m.name=document.getElementById('emName').value;
+  m.join=document.getElementById('emJoin').value.replace(/-/g,'/');
+  m.group=document.getElementById('emGroup').value;
+  const lv=document.getElementById('emLeave').value;
+  m.customLeave=lv!==''?parseInt(lv):null;
+  saveState();
+  closeOverlay('editMemberOverlay');
+  renderAdminMembers(); renderGroups();
+  alert('已儲存');
+}
+function switchMemberGroup(id){
+  const m=getMember(id); if(!m) return;
+  if(!confirm(`確定將 ${m.name} 從 ${m.group}組 切換到 ${m.group==='A'?'B':'A'}組？`)) return;
+  m.group=m.group==='A'?'B':'A';
+  saveState(); renderAdminMembers(); renderGroups();
+}
+function addMember(){
+  const id=document.getElementById('newEmpId').value.trim();
+  const name=document.getElementById('newName').value.trim();
+  const join=document.getElementById('newJoinDate').value;
+  const group=document.getElementById('newGroup').value;
+  const lv=document.getElementById('newLeave').value;
+  if(!id||!name||!join){alert('請填寫必要欄位');return;}
+  if(state.members.find(m=>m.id===id)){alert('員工編號已存在');return;}
+  state.members.push({id,name,join:join.replace(/-/g,'/'),group,customLeave:lv!==''?parseInt(lv):null});
+  saveState(); closeOverlay('addMemberOverlay'); renderAdminMembers(); renderGroups();
+  alert('已新增組員：'+name);
+}
+function openAddMemberModal(){
+  document.getElementById('newEmpId').value=''; document.getElementById('newName').value='';
+  document.getElementById('newJoinDate').value=''; document.getElementById('newLeave').value='';
+  document.getElementById('addMemberOverlay').classList.add('active');
+}
+
+// ── KPI ──
+function renderKPI(){
+  const apps=state.applications;
+  const total=apps.length;
+  const done=apps.filter(a=>a.status==='done').length;
+  const swapTotal=apps.filter(a=>a.type==='swap').length;
+  const swapDone=apps.filter(a=>a.type==='swap'&&a.status==='done').length;
+  const longLeave=apps.filter(a=>a.workdays>=5&&a.status==='done').length;
+  const expired=apps.filter(a=>a.status==='swap_expired').length;
+  const pending=apps.filter(a=>a.status==='pending'||a.status==='swap_pending').length;
+  const applyRate=state.members.length>0?Math.round(new Set(apps.map(a=>a.applicantId)).size/state.members.length*100):0;
+  const successRate=total>0?Math.round(done/total*100):0;
+  const swapRate=swapTotal>0?Math.round(swapDone/swapTotal*100):0;
+  const longRate=done>0?Math.round(longLeave/done*100):0;
+  const expiredRate=(swapTotal+expired)>0?Math.round(expired/(swapTotal+expired)*100):0;
+  const unfinishRate=total>0?Math.round(pending/total*100):0;
+  const monthlyCount={};
+  apps.forEach(a=>{ const m=a.appliedAt?a.appliedAt.slice(0,7):'unknown'; monthlyCount[m]=(monthlyCount[m]||0)+1; });
+  const personStats=state.members.map(m=>{
+    const myApps=apps.filter(a=>a.applicantId===m.id);
+    const myDone=myApps.filter(a=>a.status==='done').reduce((s,a)=>s+a.workdays,0);
+    const total2=getMemberLeave(m.id);
+    const rate=total2>0?Math.round(myDone/total2*100):0;
+    return {name:m.name,group:m.group,count:myApps.length,used:myDone,total:total2,rate};
+  }).sort((a,b)=>b.rate-a.rate);
+  document.getElementById('kpiPanel').innerHTML=`
+    <div class="grid-3" style="margin-bottom:16px;">
+      <div class="kpi-card"><div class="kpi-val">${applyRate}%</div><div class="kpi-label">特休申請率</div></div>
+      <div class="kpi-card"><div class="kpi-val">${successRate}%</div><div class="kpi-label">核准率</div></div>
+      <div class="kpi-card"><div class="kpi-val">${swapRate}%</div><div class="kpi-label">對調成功率</div></div>
+      <div class="kpi-card"><div class="kpi-val">${longRate}%</div><div class="kpi-label">長假使用率≥5天</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">${expiredRate}%</div><div class="kpi-label">對調逾期率</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--orange)">${unfinishRate}%</div><div class="kpi-label">未完成比例</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">每月申請數</div>
+      ${Object.entries(monthlyCount).sort().map(([m,c])=>`<div class="stat-row"><span>${m}</span><span class="badge badge-a">${c}件</span></div>`).join('')||'<div class="text-muted">無資料</div>'}
+    </div>
+    <div class="card" style="margin-top:12px;">
+      <div class="card-title">個人特休使用率</div>
+      <table><thead><tr><th>姓名</th><th>組</th><th>申請次</th><th>已用天</th><th>總天數</th><th>使用率</th></tr></thead>
+      <tbody>${personStats.map(p=>`<tr>
+        <td>${p.name}</td>
+        <td><span class="badge badge-${p.group.toLowerCase()}">${p.group}</span></td>
+        <td>${p.count}</td><td>${p.used}</td><td>${p.total}</td>
+        <td><div style="display:flex;align-items:center;gap:6px;">
+          <div class="leave-bar-wrap" style="flex:1;"><div class="leave-bar" style="width:${p.rate}%;background:${p.rate>80?'var(--green)':'var(--accent)'}"></div></div>
+          <span style="font-size:11px;">${p.rate}%</span>
+        </div></td>
+      </tr>`).join('')}</tbody></table>
+    </div>`;
+}
+
+// ── EXPORT ──
+function exportExcel(){
+  if(!window.XLSX){alert('XLSX庫未載入');return;}
+  const data=state.applications.map(a=>{
+    const partner=a.partnerId?getMember(a.partnerId):null;
+    return {'申請人':a.applicantName,'組別':a.group,'員工編號':a.applicantId,'開始日期':a.startDate,'結束日期':a.endDate,'工作天數':a.workdays,'類型':a.type==='swap'?'對調':'一般','對調人員':partner?partner.name:'','狀態':statusLabel(a.status),'申請時間':a.appliedAt?a.appliedAt.slice(0,19).replace('T',' '):''};
+  });
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'特休申請');
+  XLSX.writeFile(wb,'特休申請紀錄.xlsx');
+}
+function exportCalendar(){
+  if(!window.XLSX){alert('XLSX庫未載入');return;}
+  const months={};
+  state.applications.forEach(a=>{
+    const m=a.startDate.slice(0,7); if(!months[m]) months[m]=[];
+    const partner=a.partnerId?getMember(a.partnerId):null;
+    months[m].push({'月份':m,'申請人':a.applicantName,'組別':a.group,'開始日期':a.startDate,'結束日期':a.endDate,'工作天數':a.workdays,'類型':a.type==='swap'?'對調':'一般','對調人員':partner?partner.name:'','狀態':statusLabel(a.status),'申請時間':a.appliedAt?a.appliedAt.slice(0,19).replace('T',' '):''});
+  });
+  const wb=XLSX.utils.book_new();
+  Object.entries(months).sort().forEach(([m,rows])=>{ const ws=XLSX.utils.json_to_sheet(rows); XLSX.utils.book_append_sheet(wb,ws,m); });
+  if(Object.keys(months).length===0) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([]),'空');
+  XLSX.writeFile(wb,'每月特休總覽.xlsx');
+}
+function showQR(){
+  const url=window.location.href;
+  document.getElementById('qrContent').innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}" style="width:200px;height:200px;border-radius:8px;" alt="QR"><div class="text-sm mt-8">掃描QR Code開啟系統</div>`;
+  document.getElementById('qrOverlay').classList.add('active');
+}
+
+// ── OVERLAY ──
+function closeOverlay(id){ document.getElementById(id).classList.remove('active'); }
+document.querySelectorAll('.overlay').forEach(o=>{ o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('active'); }); });
+
+// ── TABS ──
+function switchTab(tab,el){
+  if(tab==='admin'){openAdmin();return;}
+  document.querySelectorAll('#tabBar .tab-item').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#app .panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='records') renderRecords(recordFilter);
+  if(tab==='groups') renderGroups();
+  if(tab==='calendar') renderCalendar();
+}
+
+// ── INIT ──
+// ── FIX 1: 啟動時先渲染畫面，再從 Firebase 載入最新資料（不先 saveState 覆蓋雲端）
+function init(){
+  currentUserId = null;
+  const today=todayStr();
+  const maxDate=getMaxFutureDate();
+  ['normalStart','normalEnd','swapMyStart','swapMyEnd'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.min=today;el.max=maxDate;}
+  });
+  renderCalendar();
+  // ── FIX 1: 啟動後立即連接 Firebase，從雲端拉取最新資料並開始監聽
+  startFirebaseSync();
 }
 
 init();
-</script>
-
-<!-- Install Banner -->
-<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#2d6a4f;color:white;padding:14px 16px;z-index:500;align-items:center;gap:10px;box-shadow:0 -4px 16px rgba(0,0,0,0.2)">
-  <span style="font-size:24px">📲</span>
-  <div style="flex:1">
-    <div style="font-size:13px;font-weight:700">安裝為 APP</div>
-    <div style="font-size:11px;opacity:0.85">加入主畫面，隨時快速開啟</div>
-  </div>
-  <button onclick="triggerInstall()" style="background:white;color:#2d6a4f;border:none;border-radius:20px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">安裝</button>
-  <button onclick="dismissInstall()" style="background:rgba(255,255,255,0.2);border:none;border-radius:50%;width:28px;height:28px;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
-</div>
-
-<!-- iOS Install Tip -->
-<div id="iosTip" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a1a18;color:white;padding:16px;z-index:500;flex-direction:column;gap:8px;border-radius:16px 16px 0 0">
-  <div style="font-size:14px;font-weight:700;text-align:center">📱 安裝到 iPhone 主畫面</div>
-  <div style="font-size:12px;opacity:0.85;text-align:center;line-height:1.6">點擊下方 <strong>分享</strong> 按鈕 <span style="font-size:16px">⎙</span>，<br>再選「<strong>加入主畫面</strong>」即可</div>
-  <button onclick="dismissIosTip()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:8px;padding:10px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:4px">我知道了</button>
-</div>
-
-<script>
-// ===== PWA SERVICE WORKER =====
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.log('SW error:', err));
-  });
-}
-
-// ===== INSTALL PROMPT =====
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  document.getElementById('installBanner').style.display = 'flex';
-});
-window.addEventListener('appinstalled', () => {
-  document.getElementById('installBanner').style.display = 'none';
-  deferredPrompt = null;
-  showToast('✅ APP 已安裝到主畫面！');
-});
-
-function triggerInstall() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(c => {
-      if (c.outcome === 'accepted') showToast('感謝安裝！');
-      deferredPrompt = null;
-      document.getElementById('installBanner').style.display = 'none';
-    });
-  }
-}
-function dismissInstall() {
-  document.getElementById('installBanner').style.display = 'none';
-  localStorage.setItem('installDismissed', Date.now());
-}
-
-// Show iOS install tip if needed
-window.addEventListener('DOMContentLoaded', () => {
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  const dismissed = localStorage.getItem('iosTipDismissed');
-  if (isIOS && !isStandalone && !dismissed) {
-    setTimeout(() => {
-      document.getElementById('iosTip').style.display = 'flex';
-    }, 2000);
-  }
-});
-function dismissIosTip() {
-  document.getElementById('iosTip').style.display = 'none';
-  localStorage.setItem('iosTipDismissed', '1');
-}
 </script>
 </body>
 </html>
