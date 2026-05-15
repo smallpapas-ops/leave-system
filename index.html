@@ -1074,6 +1074,14 @@ function formatISO(str) {
   return str ? str.replace(/-/g, '/') : '';
 }
 
+function formatDateTime(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  const pad = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate())
+    + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
 // ==================== LOOKUP ====================
 function lookupUser(inputId, infoId) {
   const q = document.getElementById(inputId).value.trim();
@@ -1449,13 +1457,14 @@ function renderRecord(r, isAdmin) {
     if (r.status !== 'cancelled') actions += `<button class="btn btn-sm btn-danger" onclick="cancelRecord('${r.id}')">取消</button>`;
   }
 
-  const history = r.history ? r.history.slice(-2).map(h => `<div class="timeline-item">${h.time.substring(0,10)} ${h.action}</div>`).join('') : '';
+  const history = r.history ? r.history.slice(-3).map(h => `<div class="timeline-item">${formatDateTime(h.time)} ${h.action}</div>`).join('') : '';
 
   return `<div class="record-card">
     <div class="record-header">
       <div>
         <div class="record-name">${name} <span style="font-size:11px;color:var(--text3);font-weight:400">${group}</span></div>
         <div class="record-meta">${r.type === 'swap' ? '🔄 對調' : '📅 一般'} ・ ${r.isLong ? '長假' : '短假'} ・ ${r.days} 工作天</div>
+        <div class="record-meta" style="margin-top:2px;color:var(--text3)">🕐 申請時間：${formatDateTime(r.createdAt)}</div>
       </div>
       ${statusBadge(r.status)}
     </div>
@@ -1800,6 +1809,21 @@ function renderAdminSettings(container) {
         <button class="btn btn-primary" style="flex:1" onclick="adminOpenSystem()">🔓 開放系統</button>
       </div>
     </div>`;
+}
+
+function adminCloseSystem() {
+  const el = document.getElementById('sysCloseMsg');
+  const msg = el ? el.value.trim() : state.systemCloseMsg;
+  if (!confirm('確定要關閉系統？同仁將無法使用。')) return;
+  toggleSystemClose(true, msg || '系統暫停使用中，請稍後再試。');
+  const tab = document.getElementById('adminTabContent');
+  if (tab) renderAdminSettings(tab);
+}
+
+function adminOpenSystem() {
+  toggleSystemClose(false);
+  const tab = document.getElementById('adminTabContent');
+  if (tab) renderAdminSettings(tab);
 }
 
 let adminSetUserId = null;
